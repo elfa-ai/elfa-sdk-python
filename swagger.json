@@ -1,0 +1,2338 @@
+{
+    "openapi": "3.0.0",
+    "components": {
+        "examples": {},
+        "headers": {},
+        "parameters": {},
+        "requestBodies": {},
+        "responses": {},
+        "schemas": {
+            "PingResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "enum": [
+                            true
+                        ],
+                        "nullable": false
+                    },
+                    "data": {
+                        "properties": {
+                            "message": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "message"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ApiKeyStatus": {
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "revoked",
+                            "expired",
+                            "payment_required"
+                        ]
+                    },
+                    "dailyRequestLimit": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "monthlyRequestLimit": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "expiresAt": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        ]
+                    },
+                    "createdAt": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        ]
+                    },
+                    "usage": {
+                        "properties": {
+                            "monthly": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "daily": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "monthly",
+                            "daily"
+                        ],
+                        "type": "object"
+                    },
+                    "limits": {
+                        "properties": {
+                            "monthly": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "daily": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "monthly",
+                            "daily"
+                        ],
+                        "type": "object"
+                    },
+                    "isExpired": {
+                        "type": "boolean"
+                    },
+                    "remainingRequests": {
+                        "properties": {
+                            "monthly": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "daily": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "monthly",
+                            "daily"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "status",
+                    "dailyRequestLimit",
+                    "monthlyRequestLimit",
+                    "expiresAt",
+                    "createdAt",
+                    "usage",
+                    "limits",
+                    "isExpired",
+                    "remainingRequests"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ApiKeyStatusData": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "dailyLimit": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "monthlyLimit": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "tier": {
+                        "type": "string"
+                    },
+                    "usage": {
+                        "properties": {
+                            "remainingMonthly": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "remainingDaily": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "month": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "today": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "remainingMonthly",
+                            "remainingDaily",
+                            "month",
+                            "today"
+                        ],
+                        "type": "object"
+                    },
+                    "subscription": {
+                        "properties": {
+                            "billingInterval": {
+                                "type": "string"
+                            },
+                            "overageUsage": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "cancelAtPeriodEnd": {
+                                "type": "boolean"
+                            },
+                            "currentPeriodEnd": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "status"
+                        ],
+                        "type": "object"
+                    },
+                    "allowOverage": {
+                        "type": "boolean"
+                    },
+                    "maxOverage": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "name",
+                    "dailyLimit",
+                    "monthlyLimit",
+                    "tier",
+                    "usage",
+                    "allowOverage"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "ApiKeyStatusResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ApiKeyStatus"
+                            },
+                            {
+                                "$ref": "#/components/schemas/ApiKeyStatusData"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "TrendingTokensResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "properties": {
+                            "pageSize": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "page": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "data": {
+                                "items": {
+                                    "properties": {
+                                        "change_percent": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "previous_count": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "current_count": {
+                                            "type": "number",
+                                            "format": "double"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "change_percent",
+                                        "previous_count",
+                                        "current_count",
+                                        "token"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "pageSize",
+                            "page",
+                            "total",
+                            "data"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AccountSmartStatsResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "properties": {
+                            "smartFollowerCount": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "followerEngagementRatio": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "averageEngagement": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "smartFollowingCount": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "followerEngagementRatio",
+                            "averageEngagement",
+                            "smartFollowingCount"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "SanitizedMention": {
+                "properties": {
+                    "tweetId": {
+                        "type": "string"
+                    },
+                    "link": {
+                        "type": "string"
+                    },
+                    "likeCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "repostCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "viewCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "quoteCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "replyCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "bookmarkCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "mentionedAt": {
+                        "type": "string"
+                    },
+                    "account": {
+                        "properties": {
+                            "isVerified": {
+                                "type": "boolean"
+                            },
+                            "username": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "isVerified",
+                            "username"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "tweetId",
+                    "link",
+                    "likeCount",
+                    "repostCount",
+                    "viewCount",
+                    "quoteCount",
+                    "replyCount",
+                    "bookmarkCount",
+                    "mentionedAt"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "TopMentionsV2Response": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SanitizedMention"
+                        },
+                        "type": "array"
+                    },
+                    "metadata": {
+                        "properties": {
+                            "pageSize": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "page": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "pageSize",
+                            "page",
+                            "total"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data",
+                    "metadata"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "KeywordMentionsV2Response": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SanitizedMention"
+                        },
+                        "type": "array"
+                    },
+                    "metadata": {
+                        "properties": {
+                            "cursor": {
+                                "type": "string"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "total"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data",
+                    "metadata"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "TokenNewsV2Response": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SanitizedMention"
+                        },
+                        "type": "array"
+                    },
+                    "metadata": {
+                        "properties": {
+                            "pageSize": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "page": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "pageSize",
+                            "page",
+                            "total"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data",
+                    "metadata"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "TrendingContractAddress": {
+                "properties": {
+                    "contractAddress": {
+                        "type": "string"
+                    },
+                    "chain": {
+                        "type": "string",
+                        "enum": [
+                            "ethereum",
+                            "solana"
+                        ]
+                    },
+                    "mentionCount": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "changePercent": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "required": [
+                    "contractAddress",
+                    "chain",
+                    "mentionCount",
+                    "changePercent"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "TrendingCAsV2Response": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "properties": {
+                            "pageSize": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "page": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "data": {
+                                "items": {
+                                    "$ref": "#/components/schemas/TrendingContractAddress"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "pageSize",
+                            "page",
+                            "total",
+                            "data"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "JsonPrimitive": {
+                "anyOf": [
+                    {
+                        "type": "boolean"
+                    },
+                    {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    {
+                        "type": "string"
+                    }
+                ],
+                "nullable": true
+            },
+            "JsonValue": {
+                "anyOf": [
+                    {
+                        "$ref": "#/components/schemas/JsonPrimitive"
+                    },
+                    {
+                        "$ref": "#/components/schemas/JsonObject"
+                    },
+                    {
+                        "$ref": "#/components/schemas/JsonArray"
+                    }
+                ]
+            },
+            "JsonObject": {
+                "properties": {},
+                "additionalProperties": {
+                    "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+            },
+            "JsonArray": {
+                "items": {
+                    "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "array"
+            },
+            "Account": {
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "properties": {
+                            "profileBannerUrl": {
+                                "type": "string"
+                            },
+                            "profileImageUrl": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "userSince": {
+                                "type": "string"
+                            },
+                            "location": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "profileBannerUrl",
+                            "profileImageUrl",
+                            "description",
+                            "userSince",
+                            "location",
+                            "name"
+                        ],
+                        "type": "object"
+                    },
+                    "followerCount": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "followingCount": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "isVerified": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "username",
+                    "data",
+                    "isVerified"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "Mention": {
+                "properties": {
+                    "id": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "originalUrl": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/JsonValue"
+                    },
+                    "likeCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "quoteCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "replyCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "repostCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "viewCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "mentionedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "bookmarkCount": {
+                        "type": "number",
+                        "format": "double",
+                        "nullable": true
+                    },
+                    "account": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Account"
+                            },
+                            {}
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "content",
+                    "originalUrl",
+                    "data",
+                    "likeCount",
+                    "quoteCount",
+                    "replyCount",
+                    "repostCount",
+                    "viewCount",
+                    "mentionedAt",
+                    "bookmarkCount",
+                    "account"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "MentionResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/Mention"
+                        },
+                        "type": "array"
+                    },
+                    "metadata": {
+                        "properties": {
+                            "offset": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "limit": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "offset",
+                            "limit",
+                            "total"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data",
+                    "metadata"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "TopMentionsResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "properties": {
+                            "pageSize": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "page": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "data": {
+                                "items": {
+                                    "properties": {
+                                        "metrics": {
+                                            "properties": {
+                                                "view_count": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "repost_count": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "reply_count": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "like_count": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                }
+                                            },
+                                            "required": [
+                                                "view_count",
+                                                "repost_count",
+                                                "reply_count",
+                                                "like_count"
+                                            ],
+                                            "type": "object"
+                                        },
+                                        "mentioned_at": {
+                                            "type": "string"
+                                        },
+                                        "content": {
+                                            "type": "string"
+                                        },
+                                        "id": {
+                                            "type": "number",
+                                            "format": "double"
+                                        }
+                                    },
+                                    "required": [
+                                        "metrics",
+                                        "mentioned_at",
+                                        "content",
+                                        "id"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "pageSize",
+                            "page",
+                            "total",
+                            "data"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "AccountInfo": {
+                "properties": {
+                    "username": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "profileImageUrl": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "username"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "SimpleMention": {
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "twitter_id": {
+                        "type": "string"
+                    },
+                    "twitter_user_id": {
+                        "type": "string"
+                    },
+                    "parent_tweet_id": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "mentioned_at": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "twitter_account_info": {
+                        "$ref": "#/components/schemas/AccountInfo"
+                    },
+                    "metrics": {
+                        "properties": {
+                            "view_count": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "repost_count": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "reply_count": {
+                                "type": "number",
+                                "format": "double"
+                            },
+                            "like_count": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "view_count",
+                            "repost_count",
+                            "reply_count",
+                            "like_count"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "id",
+                    "twitter_id",
+                    "twitter_user_id",
+                    "parent_tweet_id",
+                    "content",
+                    "mentioned_at",
+                    "type",
+                    "metrics"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "GetMentionsByKeywordsResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SimpleMention"
+                        },
+                        "type": "array"
+                    },
+                    "metadata": {
+                        "properties": {
+                            "cursor": {
+                                "type": "string"
+                            },
+                            "total": {
+                                "type": "number",
+                                "format": "double"
+                            }
+                        },
+                        "required": [
+                            "total"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data",
+                    "metadata"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "BasicAccount": {
+                "properties": {
+                    "twitterId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "followerCount": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "followingCount": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "isVerified": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "properties": {
+                            "description": {
+                                "type": "string"
+                            },
+                            "userSince": {
+                                "type": "string"
+                            },
+                            "location": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "description",
+                            "userSince",
+                            "location",
+                            "name"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "twitterId",
+                    "username",
+                    "followerCount",
+                    "followingCount",
+                    "isVerified",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "BasicCoin": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "symbol": {
+                        "type": "string"
+                    },
+                    "coinId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name",
+                    "symbol",
+                    "coinId"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "MentionWithAccountAndToken": {
+                "properties": {
+                    "mentionId": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "originalUrl": {
+                        "type": "string"
+                    },
+                    "mentionedAt": {
+                        "type": "string"
+                    },
+                    "mentionedByType": {
+                        "type": "string",
+                        "enum": [
+                            "general",
+                            "ct",
+                            "smart"
+                        ]
+                    },
+                    "sentiment": {
+                        "type": "string",
+                        "enum": [
+                            "very-bullish",
+                            "bullish",
+                            "very-bearish",
+                            "bearish",
+                            "neutral"
+                        ]
+                    },
+                    "account": {
+                        "$ref": "#/components/schemas/BasicAccount"
+                    },
+                    "coins": {
+                        "items": {
+                            "$ref": "#/components/schemas/BasicCoin"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "mentionId",
+                    "content",
+                    "type",
+                    "originalUrl",
+                    "mentionedAt",
+                    "mentionedByType",
+                    "sentiment",
+                    "account",
+                    "coins"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            },
+            "GetTokenMentionsResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "data": {
+                        "properties": {
+                            "data": {
+                                "items": {
+                                    "$ref": "#/components/schemas/MentionWithAccountAndToken"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "data"
+                        ],
+                        "type": "object"
+                    }
+                },
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "type": "object",
+                "additionalProperties": false
+            }
+        },
+        "securitySchemes": {
+            "api_key": {
+                "type": "apiKey",
+                "name": "x-elfa-api-key",
+                "in": "header"
+            }
+        }
+    },
+    "info": {
+        "title": "Elfa Api",
+        "version": "2.0.0",
+        "description": "API documentation for Elfa"
+    },
+    "paths": {
+        "/v2/ping": {
+            "get": {
+                "operationId": "ping-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PingResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Simple health check to verify API availability",
+                "summary": "Health check endpoint",
+                "tags": [
+                    "v2"
+                ],
+                "security": [],
+                "parameters": []
+            }
+        },
+        "/v2/key-status": {
+            "get": {
+                "operationId": "getApiKeyStatus-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiKeyStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Retrieve the current status and usage of your API key",
+                "summary": "API key status",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": []
+            }
+        },
+        "/v2/aggregations/trending-tokens": {
+            "get": {
+                "operationId": "getTrendingTokens-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrendingTokensResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve trending tokens based on highest mentions count,\nfiltered by a minimum mention threshold over a specified time period.\n\nNote: You must provide EITHER timeWindow OR both from and to parameters.\nIf both timeWindow and from/to are provided, from/to takes priority.",
+                "summary": "Trending tokens",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Time window for trending analysis (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
+                        "in": "query",
+                        "name": "timeWindow",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 50,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Minimum number of mentions required",
+                        "in": "query",
+                        "name": "minMentions",
+                        "required": false,
+                        "schema": {
+                            "default": 5,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v2/account/smart-stats": {
+            "get": {
+                "operationId": "getAccountSmartStats-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountSmartStatsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                },
+                "description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve smart stats given username",
+                "summary": "Smart stats of accounts",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Account username to get stats for",
+                        "in": "query",
+                        "name": "username",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v2/data/top-mentions": {
+            "get": {
+                "operationId": "getTopMentionsByTicker-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TopMentionsV2Response"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Returns the most significant mentions for a given ticker symbol, ranked by\nrelevance and engagement within a specified time window. Sanitized data without raw tweet content.",
+                "summary": "Top mentions",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "The ticker symbol to get mentions for. Prefixing with $ will only return cashtag matches.",
+                        "in": "query",
+                        "name": "ticker",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Time window for mentions (e.g., \"1h\", \"24h\", \"7d\")",
+                        "in": "query",
+                        "name": "timeWindow",
+                        "required": false,
+                        "schema": {
+                            "default": "1h",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 10,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v2/data/keyword-mentions": {
+            "get": {
+                "operationId": "getKeywordMentions-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KeywordMentionsV2Response"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Search mentions by keywords OR account name with time period. Returns sanitized data without raw tweet content.",
+                "summary": "Enhanced keyword mentions search",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Up to 5 keywords to search for, separated by commas (optional if accountName provided)",
+                        "in": "query",
+                        "name": "keywords",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Account username to filter by (optional if keywords provided)",
+                        "in": "query",
+                        "name": "accountName",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of results to return (max 30)",
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Type of search (and, or)",
+                        "in": "query",
+                        "name": "searchType",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Cursor for pagination",
+                        "in": "query",
+                        "name": "cursor",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v2/data/token-news": {
+            "get": {
+                "operationId": "getTokenNews-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenNewsV2Response"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Retrieve token-related news mentions. Returns sanitized data without raw tweet content.",
+                "summary": "Token news mentions",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "CoinGecko Coin IDs to filter by, comma-separated",
+                        "in": "query",
+                        "name": "coinIds",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v2/aggregations/trending-cas/twitter": {
+            "get": {
+                "operationId": "getTrendingCAsTwitter-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrendingCAsV2Response"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Get trending contract addresses mentioned on Twitter/X. Returns contract addresses with mention counts.\n\nNote: You must provide EITHER timeWindow OR both from and to parameters.\nIf both timeWindow and from/to are provided, from/to takes priority.",
+                "summary": "Trending contract addresses on Twitter",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Time window for trending analysis (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
+                        "in": "query",
+                        "name": "timeWindow",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 50,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Minimum number of mentions required",
+                        "in": "query",
+                        "name": "minMentions",
+                        "required": false,
+                        "schema": {
+                            "default": 5,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v2/aggregations/trending-cas/telegram": {
+            "get": {
+                "operationId": "getTrendingCAsTelegram-v2",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrendingCAsV2Response"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Get trending contract addresses mentioned on Telegram. Returns contract addresses with mention counts.\n\nNote: You must provide EITHER timeWindow OR both from and to parameters.\nIf both timeWindow and from/to are provided, from/to takes priority.",
+                "summary": "Trending contract addresses on Telegram",
+                "tags": [
+                    "v2"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Time window for trending analysis (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
+                        "in": "query",
+                        "name": "timeWindow",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": false,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 50,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Minimum number of mentions required",
+                        "in": "query",
+                        "name": "minMentions",
+                        "required": false,
+                        "schema": {
+                            "default": 5,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/ping": {
+            "get": {
+                "operationId": "ping-v1",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PingResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Simple health check to verify API availability",
+                "summary": "Health check endpoint",
+                "tags": [
+                    "v1"
+                ],
+                "security": [],
+                "parameters": []
+            }
+        },
+        "/v1/key-status": {
+            "get": {
+                "operationId": "getApiKeyStatus-v1",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiKeyStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Retrieve the current status and usage of your API key",
+                "summary": "Get API key status",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": []
+            }
+        },
+        "/v1/mentions": {
+            "get": {
+                "operationId": "GetMentionsWithSmartEngagement",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MentionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Query tweets by smart accounts with at least 10 other smart interaction (comment, RT, QT). Updated every 1 hour.",
+                "summary": "Get mentions with smart engagement",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 100,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "offset",
+                        "required": false,
+                        "schema": {
+                            "default": 0,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/top-mentions": {
+            "get": {
+                "operationId": "GetTopMentions",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TopMentionsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nReturns the most significant mentions for a given ticker symbol, ranked by\nrelevance within a specified time window.",
+                "summary": "Top mentions by ticker",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "The ticker symbol to get mentions for. Prefixing with $ will only return cashtag matches.",
+                        "in": "query",
+                        "name": "ticker",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Time window for mentions (e.g., \"1h\", \"24h\", \"7d\")",
+                        "in": "query",
+                        "name": "timeWindow",
+                        "required": false,
+                        "schema": {
+                            "default": "1h",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 10,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Include account details (username, description, profile image url)",
+                        "in": "query",
+                        "name": "includeAccountDetails",
+                        "required": false,
+                        "schema": {
+                            "default": false,
+                            "type": "boolean"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/mentions/search": {
+            "get": {
+                "operationId": "GetMentionsByKeywords",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetMentionsByKeywordsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "Query tweets that mentioned up to 5 keywords within a 30-days window. Up to 6-months worth of tweets. Updated every 5 mins.",
+                "summary": "Search mentions by keywords",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Up to 5 keywords to search for, separated by commas. Phrases accepted",
+                        "in": "query",
+                        "name": "keywords",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Start date (unix timestamp)",
+                        "in": "query",
+                        "name": "from",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "End date (unix timestamp)",
+                        "in": "query",
+                        "name": "to",
+                        "required": true,
+                        "schema": {
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of results to return, defaults to 20, max 30",
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Type of search (and, or)",
+                        "in": "query",
+                        "name": "searchType",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Cursor for pagination, expires after 10 seconds, the same cursor can be used to paginate through the results",
+                        "in": "query",
+                        "name": "cursor",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/trending-tokens": {
+            "get": {
+                "operationId": "GetTrendingTokens",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrendingTokensResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve trending tokens based on highest mentions count,\nfiltered by a minimum mention threshold over a specified time period.",
+                "summary": "Trending tokens",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "description": "Time window for trending analysis",
+                        "in": "query",
+                        "name": "timeWindow",
+                        "required": false,
+                        "schema": {
+                            "default": "24h",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Page number for pagination",
+                        "in": "query",
+                        "name": "page",
+                        "required": false,
+                        "schema": {
+                            "default": 1,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Number of items per page",
+                        "in": "query",
+                        "name": "pageSize",
+                        "required": false,
+                        "schema": {
+                            "default": 50,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "description": "Minimum number of mentions required",
+                        "in": "query",
+                        "name": "minMentions",
+                        "required": false,
+                        "schema": {
+                            "default": 5,
+                            "format": "double",
+                            "type": "number"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/account/smart-stats": {
+            "get": {
+                "operationId": "GetAccountSmartStats",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccountSmartStatsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                },
+                "description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nGet smart stats of smart accounts",
+                "summary": "Get smart stats of smart accounts",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "username",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "https://api.elfa.ai",
+            "description": "Elfa Prod Server"
+        }
+    ],
+    "tags": [
+        {
+            "name": "v2",
+            "description": "API v2 endpoints"
+        },
+        {
+            "name": "v1",
+            "description": "API v1 endpoints"
+        }
+    ],
+    "tryItOutEnabled": true,
+    "supportedSubmitMethods": [
+        "get",
+        "post"
+    ],
+    "x-tagGroups": [
+        {
+            "name": "API v2 (Latest)",
+            "tags": [
+                "v2"
+            ]
+        },
+        {
+            "name": "API v1 (Legacy)",
+            "tags": [
+                "v1"
+            ]
+        }
+    ]
+}

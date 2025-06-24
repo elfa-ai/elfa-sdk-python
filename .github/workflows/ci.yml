@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          
+      - name: Run linting (flake8)
+        run: make lint
+        
+      - name: Run type checking (mypy)
+        run: make type-check
+        
+      - name: Run tests with coverage
+        run: make test-coverage
+        
+      - name: Upload coverage reports
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./htmlcov/index.html
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          
+      - name: Run integration tests
+        env:
+          ELFA_API_KEY: ${{ secrets.ELFA_API_KEY }}
+        run: |
+          python examples/basic_usage.py
+          python examples/async_usage.py
+          python examples/error_handling.py
+        continue-on-error: true # Don't fail CI if API key not available
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install safety bandit
+          
+      - name: Run security audit (safety)
+        run: safety check --json || true
+        
+      - name: Run security linter (bandit)
+        run: bandit -r elfa/ -f json || true
+
+  publish-check:
+    name: Publish Readiness
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+          pip install -e ".[dev]"
+          
+      - name: Check package metadata
+        run: |
+          # Verify pyproject.toml has required fields
+          python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+          project = data['project']
+          required = ['name', 'version', 'description', 'readme', 'license', 'authors']
+          missing = [field for field in required if field not in project]
+          if missing:
+              print(f'❌ Missing required pyproject.toml fields: {missing}')
+              exit(1)
+          print('✅ Package metadata validation passed')
+          "
+          
+      - name: Build package
+        run: make build
+        
+      - name: Verify build artifacts
+        run: |
+          # Check if distribution files are created
+          test -f dist/*.whl || (echo "❌ Missing wheel file" && exit 1)
+          test -f dist/*.tar.gz || (echo "❌ Missing source distribution" && exit 1)
+          echo "✅ All build artifacts present"
+          
+      - name: Check package contents
+        run: |
+          # Verify package contents
+          python -m twine check dist/*
+          echo "✅ Package contents verified"
+          
+      - name: Test package installation
+        run: |
+          # Create virtual environment and test installation
+          python -m venv test_env
+          source test_env/bin/activate
+          pip install dist/*.whl
+          python -c "import elfa; print('✅ Package imports successfully')"
+          deactivate
+          rm -rf test_env

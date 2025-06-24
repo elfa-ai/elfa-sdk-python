@@ -1,0 +1,60 @@
+name: Validate Workflows
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  validate:
+    name: Validate GitHub Actions Workflows
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate workflow files
+        run: |
+          # Check if workflow files are valid YAML
+          for file in .github/workflows/*.yml .github/workflows/*.yaml; do
+            if [ -f "$file" ]; then
+              echo "Validating $file..."
+              # Use GitHub's action-validator or a simple YAML parser
+              python -c "
+              import yaml
+              import sys
+              try:
+                  with open('$file', 'r') as f:
+                      yaml.safe_load(f)
+                  print('✅ $file is valid')
+              except yaml.YAMLError as e:
+                  print('❌ $file has YAML syntax error:', e)
+                  sys.exit(1)
+              except Exception as e:
+                  print('❌ Error validating $file:', e)
+                  sys.exit(1)
+              "
+            fi
+          done
+          
+      - name: Check for required configuration
+        run: |
+          echo "🔍 Checking required configuration for workflows..."
+          echo ""
+          echo "PyPI Publishing Setup:"
+          echo "✅ Uses PyPI Trusted Publishing (no API tokens needed)"
+          echo "📋 Configure trusted publisher at: https://pypi.org/manage/account/publishing/"
+          echo ""
+          echo "Optional secrets for enhanced functionality:"
+          echo "- ELFA_API_KEY: API key for integration tests (optional)"
+          echo ""
+          echo "Required PyPI Trusted Publisher Configuration:"
+          echo "- PyPI Project Name: elfa-sdk"
+          echo "- Owner: [your-github-username-or-org]"
+          echo "- Repository: elfa-sdk-python"
+          echo "- Workflow: release.yml"
+          echo "- Environment: release"
