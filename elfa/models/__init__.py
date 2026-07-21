@@ -2,6 +2,7 @@
 
 from elfa.models.auto import (
     AutoChatResponse,
+    AutoConvertDraftResponse,
     AutoDraft,
     AutoEstimatedCost,
     AutoExchangeConnection,
@@ -20,6 +21,7 @@ from elfa.models.auto import (
     AutoSessionSummary,
     AutoSpeed,
     AutoStreamEvent,
+    AutoSuccessResponse,
     AutoValidateResponse,
     AutoValidateSymbolResponse,
     TradableExchange,
@@ -101,6 +103,7 @@ __all__ = [
     "TradableExchange",
     "AutoSpeed",
     "AutoChatResponse",
+    "AutoConvertDraftResponse",
     "AutoValidateResponse",
     "AutoEstimatedCost",
     "AutoQuery",
@@ -119,6 +122,7 @@ __all__ = [
     "AutoExchangeConnection",
     "AutoListExchangesResponse",
     "AutoValidateSymbolResponse",
+    "AutoSuccessResponse",
     "AutoStreamEvent",
     # Trade
     "TradeExchange",

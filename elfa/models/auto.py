@@ -87,6 +87,12 @@ class AutoDraft(ElfaModel):
     visibility: Optional[Literal["public", "private"]] = None
 
 
+class AutoConvertDraftResponse(ElfaModel):
+    draft_id: str = Field(alias="draftId")
+    converted_at: str = Field(alias="convertedAt")
+    query: AutoQuery
+
+
 class AutoListDraftsResponse(ElfaModel):
     drafts: Optional[List[AutoDraft]] = None
     data: Optional[List[AutoDraft]] = None
@@ -154,6 +160,10 @@ class AutoListExchangesResponse(ElfaModel):
 
 class AutoValidateSymbolResponse(ElfaModel):
     supported: Literal["true", "false"]
+
+
+class AutoSuccessResponse(ElfaModel):
+    success: bool
 
 
 class AutoStreamEvent(ElfaModel):

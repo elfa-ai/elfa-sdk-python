@@ -5,9 +5,10 @@ server for order/position writes; previews are signed too, which is harmless).
 Order inputs are dicts serialized verbatim as the signed body.
 """
 
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from elfa.client.base import SignedClient, parse_model
+from elfa.exceptions import ElfaValidationError
 from elfa.models.trade import (
     CancelOrderInput,
     ClosePositionInput,
@@ -17,15 +18,40 @@ from elfa.models.trade import (
     TradePreviewResponse,
     TradeResultResponse,
 )
+from elfa.utils.http import DEFAULT_BASE_URL, AsyncTransport, SyncTransport
 
 MOUNT = "/v2/trade"
 
 
 class TradeClient(SignedClient):
-    """Synchronous trading client. Access via ``ElfaClient.trade``."""
+    """Synchronous trading client. Access via ``ElfaClient.trade``,
+    or construct standalone with an ``api_key``."""
 
-    def __init__(self, transport: Any, hmac_secret: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float = 30.0,
+        retries: int = 3,
+        retry_delay: float = 1.0,
+        hmac_secret: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        transport: Optional[SyncTransport] = None,
+    ):
+        self._owns_transport = transport is None
+        if transport is None:
+            if not api_key:
+                raise ElfaValidationError("api_key is required")
+            transport = SyncTransport(
+                api_key, base_url, timeout, retries, retry_delay, headers
+            )
         super().__init__(transport, MOUNT, hmac_secret)
+
+    def close(self) -> None:
+        """Close the connection pool if this client owns it (standalone use)."""
+        if self._owns_transport:
+            self._transport.close()
 
     def _post(self, path: str, body: Any) -> Any:
         url, content, headers = self._post_args(path, body)
@@ -69,10 +95,34 @@ class TradeClient(SignedClient):
 
 
 class AsyncTradeClient(SignedClient):
-    """Asynchronous trading client. Access via ``AsyncElfaClient.trade``."""
+    """Asynchronous trading client. Access via ``AsyncElfaClient.trade``,
+    or construct standalone with an ``api_key``."""
 
-    def __init__(self, transport: Any, hmac_secret: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float = 30.0,
+        retries: int = 3,
+        retry_delay: float = 1.0,
+        hmac_secret: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        transport: Optional[AsyncTransport] = None,
+    ):
+        self._owns_transport = transport is None
+        if transport is None:
+            if not api_key:
+                raise ElfaValidationError("api_key is required")
+            transport = AsyncTransport(
+                api_key, base_url, timeout, retries, retry_delay, headers
+            )
         super().__init__(transport, MOUNT, hmac_secret)
+
+    async def close(self) -> None:
+        """Close the connection pool if this client owns it (standalone use)."""
+        if self._owns_transport:
+            await self._transport.close()
 
     async def _post(self, path: str, body: Any) -> Any:
         url, content, headers = self._post_args(path, body)

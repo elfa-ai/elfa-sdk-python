@@ -49,12 +49,6 @@ dev = [
     "coverage>=7.0.0",
 ]
 
-docs = [
-    "mkdocs>=1.4.0",
-    "mkdocs-material>=9.0.0",
-    "mkdocstrings[python]>=0.20.0",
-]
-
 [project.urls]
 Homepage = "https://elfa.ai"
 Documentation = "https://docs.elfa.ai"

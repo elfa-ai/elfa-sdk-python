@@ -7,7 +7,7 @@ This file provides base instructions for all AI coding assistants (Claude Code, 
 **Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, and the Auto/Trade engines for crypto. V2-only (no V1 surface).
 
 ### Technology Stack
-- **Language**: Python 3.8+
+- **Language**: Python 3.9+
 - **HTTP Client**: httpx (sync/async support)
 - **Data Models**: Pydantic v2 for type safety
 - **Testing**: pytest + respx (sync/async mocking)

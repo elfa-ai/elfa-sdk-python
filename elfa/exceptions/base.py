@@ -2,6 +2,7 @@
 Exception hierarchy for the Elfa SDK
 """
 
+import json
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any, Callable, Optional
@@ -37,8 +38,10 @@ class ElfaAPIError(Exception):
 class ElfaAuthenticationError(ElfaAPIError):
     """Raised when the API key is invalid or missing (HTTP 401)."""
 
-    def __init__(self, message: str = "Authentication failed"):
-        super().__init__(message, status_code=401)
+    def __init__(
+        self, message: str = "Authentication failed", request_id: Optional[str] = None
+    ):
+        super().__init__(message, status_code=401, request_id=request_id)
 
 
 class ElfaRateLimitError(ElfaAPIError):
@@ -50,8 +53,11 @@ class ElfaRateLimitError(ElfaAPIError):
         retry_after: Optional[int] = None,
         reset_time: Optional[datetime] = None,
         response_data: Optional[Any] = None,
+        request_id: Optional[str] = None,
     ):
-        super().__init__(message, status_code=429, response_data=response_data)
+        super().__init__(
+            message, status_code=429, response_data=response_data, request_id=request_id
+        )
         self.retry_after = retry_after
         self.reset_time = reset_time
 
@@ -59,8 +65,10 @@ class ElfaRateLimitError(ElfaAPIError):
 class ElfaNotFoundError(ElfaAPIError):
     """Raised when a requested resource is not found (HTTP 404)."""
 
-    def __init__(self, message: str = "Resource not found"):
-        super().__init__(message, status_code=404)
+    def __init__(
+        self, message: str = "Resource not found", request_id: Optional[str] = None
+    ):
+        super().__init__(message, status_code=404, request_id=request_id)
 
 
 class ElfaValidationError(ElfaAPIError):
@@ -71,8 +79,9 @@ class ElfaValidationError(ElfaAPIError):
         message: str,
         validation_errors: Optional[Any] = None,
         status_code: Optional[int] = None,
+        request_id: Optional[str] = None,
     ):
-        super().__init__(message, status_code=status_code)
+        super().__init__(message, status_code=status_code, request_id=request_id)
         self.validation_errors = validation_errors
 
 
@@ -104,7 +113,12 @@ def _extract_message(data: Any) -> Optional[str]:
     if isinstance(data, str):
         return data or None
     if isinstance(data, dict):
-        return data.get("message") or data.get("error") or data.get("detail")
+        candidate = data.get("message") or data.get("error") or data.get("detail")
+        if isinstance(candidate, str):
+            return candidate
+        if isinstance(candidate, dict):
+            inner = candidate.get("message")
+            return inner if isinstance(inner, str) else json.dumps(candidate)
     return None
 
 
@@ -144,9 +158,9 @@ def raise_for_response(response: httpx.Response) -> None:
     status = response.status_code
 
     if status == 401:
-        raise ElfaAuthenticationError(message)
+        raise ElfaAuthenticationError(message, request_id=request_id)
     if status == 404:
-        raise ElfaNotFoundError(message)
+        raise ElfaNotFoundError(message, request_id=request_id)
     if status == 429:
         retry_after = response.headers.get("retry-after")
         raise ElfaRateLimitError(
@@ -156,10 +170,13 @@ def raise_for_response(response: httpx.Response) -> None:
             ),
             reset_time=compute_rate_limit_reset(response.headers.get),
             response_data=data,
+            request_id=request_id,
         )
     if status == 400:
         errors = data.get("errors") if isinstance(data, dict) else None
-        raise ElfaValidationError(message, validation_errors=errors, status_code=400)
+        raise ElfaValidationError(
+            message, validation_errors=errors, status_code=400, request_id=request_id
+        )
 
     raise ElfaAPIError(
         message, status_code=status, response_data=data, request_id=request_id

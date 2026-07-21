@@ -9,8 +9,10 @@ from typing import Any, AsyncIterator, Dict, Iterator, Optional
 from urllib.parse import quote
 
 from elfa.client.base import SignedClient, drop_none, parse_model, stream_event
+from elfa.exceptions import ElfaValidationError
 from elfa.models.auto import (
     AutoChatResponse,
+    AutoConvertDraftResponse,
     AutoDraft,
     AutoExchangeConnection,
     AutoExecution,
@@ -22,11 +24,14 @@ from elfa.models.auto import (
     AutoPollQueryResponse,
     AutoQuery,
     AutoSession,
+    AutoSpeed,
     AutoStreamEvent,
+    AutoSuccessResponse,
     AutoValidateResponse,
     AutoValidateSymbolResponse,
     TradableExchange,
 )
+from elfa.utils.http import DEFAULT_BASE_URL, AsyncTransport, SyncTransport
 from elfa.utils.sse import aiter_sse, iter_sse
 
 MOUNT = "/v2/auto"
@@ -34,10 +39,34 @@ _SSE_HEADERS = {"Accept": "text/event-stream"}
 
 
 class AutoClient(SignedClient):
-    """Synchronous Auto engine client. Access via ``ElfaClient.auto``."""
+    """Synchronous Auto engine client. Access via ``ElfaClient.auto``,
+    or construct standalone with an ``api_key``."""
 
-    def __init__(self, transport: Any, hmac_secret: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float = 30.0,
+        retries: int = 3,
+        retry_delay: float = 1.0,
+        hmac_secret: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        transport: Optional[SyncTransport] = None,
+    ):
+        self._owns_transport = transport is None
+        if transport is None:
+            if not api_key:
+                raise ElfaValidationError("api_key is required")
+            transport = SyncTransport(
+                api_key, base_url, timeout, retries, retry_delay, headers
+            )
         super().__init__(transport, MOUNT, hmac_secret)
+
+    def close(self) -> None:
+        """Close the connection pool if this client owns it (standalone use)."""
+        if self._owns_transport:
+            self._transport.close()
 
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._transport.request_json("GET", f"{MOUNT}{path}", params=params)
@@ -56,7 +85,7 @@ class AutoClient(SignedClient):
         self,
         message: str,
         *,
-        speed: Optional[str] = None,
+        speed: Optional[AutoSpeed] = None,
         session_id: Optional[str] = None,
     ) -> AutoChatResponse:
         body = drop_none({"message": message, "speed": speed, "sessionId": session_id})
@@ -119,8 +148,11 @@ class AutoClient(SignedClient):
             AutoValidateResponse, self._post(f"/queries/drafts/{draft_id}/validate")
         )
 
-    def convert_draft(self, draft_id: str) -> AutoQuery:
-        return parse_model(AutoQuery, self._post(f"/queries/drafts/{draft_id}/convert"))
+    def convert_draft(self, draft_id: str) -> AutoConvertDraftResponse:
+        return parse_model(
+            AutoConvertDraftResponse,
+            self._post(f"/queries/drafts/{draft_id}/convert"),
+        )
 
     def list_sessions(self, query_id: str) -> AutoListSessionsResponse:
         return parse_model(
@@ -137,7 +169,7 @@ class AutoClient(SignedClient):
         *,
         query_id: Optional[str] = None,
         status: Optional[str] = None,
-        type: Optional[str] = None,
+        execution_type: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> AutoListExecutionsResponse:
@@ -145,7 +177,7 @@ class AutoClient(SignedClient):
             {
                 "queryId": query_id,
                 "status": status,
-                "type": type,
+                "type": execution_type,
                 "limit": limit,
                 "offset": offset,
             }
@@ -165,8 +197,8 @@ class AutoClient(SignedClient):
             AutoExchangeConnection, self._post("/exchanges", exchange_input)
         )
 
-    def disconnect_exchange(self, exchange: TradableExchange) -> Any:
-        return self._delete(f"/exchanges/{exchange}")
+    def disconnect_exchange(self, exchange: TradableExchange) -> AutoSuccessResponse:
+        return parse_model(AutoSuccessResponse, self._delete(f"/exchanges/{exchange}"))
 
     def validate_symbol(
         self, exchange: TradableExchange, symbol: str
@@ -191,10 +223,34 @@ class AutoClient(SignedClient):
 
 
 class AsyncAutoClient(SignedClient):
-    """Asynchronous Auto engine client. Access via ``AsyncElfaClient.auto``."""
+    """Asynchronous Auto engine client. Access via ``AsyncElfaClient.auto``,
+    or construct standalone with an ``api_key``."""
 
-    def __init__(self, transport: Any, hmac_secret: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float = 30.0,
+        retries: int = 3,
+        retry_delay: float = 1.0,
+        hmac_secret: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        transport: Optional[AsyncTransport] = None,
+    ):
+        self._owns_transport = transport is None
+        if transport is None:
+            if not api_key:
+                raise ElfaValidationError("api_key is required")
+            transport = AsyncTransport(
+                api_key, base_url, timeout, retries, retry_delay, headers
+            )
         super().__init__(transport, MOUNT, hmac_secret)
+
+    async def close(self) -> None:
+        """Close the connection pool if this client owns it (standalone use)."""
+        if self._owns_transport:
+            await self._transport.close()
 
     async def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return await self._transport.request_json(
@@ -215,7 +271,7 @@ class AsyncAutoClient(SignedClient):
         self,
         message: str,
         *,
-        speed: Optional[str] = None,
+        speed: Optional[AutoSpeed] = None,
         session_id: Optional[str] = None,
     ) -> AutoChatResponse:
         body = drop_none({"message": message, "speed": speed, "sessionId": session_id})
@@ -283,9 +339,10 @@ class AsyncAutoClient(SignedClient):
             await self._post(f"/queries/drafts/{draft_id}/validate"),
         )
 
-    async def convert_draft(self, draft_id: str) -> AutoQuery:
+    async def convert_draft(self, draft_id: str) -> AutoConvertDraftResponse:
         return parse_model(
-            AutoQuery, await self._post(f"/queries/drafts/{draft_id}/convert")
+            AutoConvertDraftResponse,
+            await self._post(f"/queries/drafts/{draft_id}/convert"),
         )
 
     async def list_sessions(self, query_id: str) -> AutoListSessionsResponse:
@@ -303,7 +360,7 @@ class AsyncAutoClient(SignedClient):
         *,
         query_id: Optional[str] = None,
         status: Optional[str] = None,
-        type: Optional[str] = None,
+        execution_type: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> AutoListExecutionsResponse:
@@ -311,7 +368,7 @@ class AsyncAutoClient(SignedClient):
             {
                 "queryId": query_id,
                 "status": status,
-                "type": type,
+                "type": execution_type,
                 "limit": limit,
                 "offset": offset,
             }
@@ -335,8 +392,12 @@ class AsyncAutoClient(SignedClient):
             AutoExchangeConnection, await self._post("/exchanges", exchange_input)
         )
 
-    async def disconnect_exchange(self, exchange: TradableExchange) -> Any:
-        return await self._delete(f"/exchanges/{exchange}")
+    async def disconnect_exchange(
+        self, exchange: TradableExchange
+    ) -> AutoSuccessResponse:
+        return parse_model(
+            AutoSuccessResponse, await self._delete(f"/exchanges/{exchange}")
+        )
 
     async def validate_symbol(
         self, exchange: TradableExchange, symbol: str

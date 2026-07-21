@@ -133,6 +133,112 @@ def test_chat_requires_message_for_chat_analysis():
 
 
 @respx.mock
+def test_chat_non_chat_analysis_allows_empty_message():
+    route = respx.post(f"{BASE_URL}/v2/chat").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"message": "m", "sessionId": "s", "creditsConsumed": 1},
+            },
+        )
+    )
+    client = _client()
+    client.chat(analysis_type="summary")
+    body = route.calls[-1].request.content.decode()
+    assert "message" not in body
+    assert '"analysisType":"summary"' in body
+    client.close()
+
+
+@respx.mock
+def test_keyword_mentions_from_without_to_not_required():
+    respx.get(f"{BASE_URL}/v2/data/keyword-mentions").mock(
+        return_value=httpx.Response(
+            200, json={"success": True, "data": [], "metadata": {"total": 0}}
+        )
+    )
+    client = _client()
+    client.get_keyword_mentions(keywords="btc", from_time=1)
+    client.close()
+
+
+@respx.mock
+def test_trending_cas_twitter_and_telegram_paths():
+    twitter = respx.get(f"{BASE_URL}/v2/aggregations/trending-cas/twitter").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"total": 0, "page": 1, "pageSize": 1, "data": []},
+            },
+        )
+    )
+    telegram = respx.get(f"{BASE_URL}/v2/aggregations/trending-cas/telegram").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"total": 0, "page": 1, "pageSize": 1, "data": []},
+            },
+        )
+    )
+    client = _client()
+    client.get_trending_cas_twitter(time_window="24h")
+    client.get_trending_cas_telegram(time_window="24h")
+    assert twitter.called and telegram.called
+    client.close()
+
+
+@respx.mock
+def test_custom_headers_sent():
+    route = respx.get(f"{BASE_URL}/v2/ping").mock(
+        return_value=httpx.Response(
+            200, json={"success": True, "data": {"message": "pong"}}
+        )
+    )
+    client = ElfaClient(api_key="k", base_url=BASE_URL, headers={"x-custom": "v"})
+    client.ping()
+    assert route.calls[-1].request.headers["x-custom"] == "v"
+    client.close()
+
+
+@respx.mock
+def test_test_connection_true_and_false():
+    route = respx.get(f"{BASE_URL}/v2/ping").mock(
+        side_effect=[
+            httpx.Response(200, json={"success": True, "data": {"message": "pong"}}),
+            httpx.Response(401, json={"message": "nope"}),
+        ]
+    )
+    client = ElfaClient(api_key="k", base_url=BASE_URL, retries=0)
+    assert client.test_connection() is True
+    assert client.test_connection() is False
+    assert route.call_count == 2
+    client.close()
+
+
+def test_empty_api_key_raises():
+    with pytest.raises(ElfaValidationError):
+        ElfaClient("")
+    with pytest.raises(ElfaValidationError):
+        AsyncElfaClient("")
+
+
+def test_account_smart_stats_requires_username():
+    client = _client()
+    with pytest.raises(ElfaValidationError):
+        client.get_account_smart_stats("")
+    client.close()
+
+
+async def test_async_validation_before_request():
+    async with AsyncElfaClient(api_key="k", base_url=BASE_URL, retries=0) as client:
+        with pytest.raises(ElfaValidationError):
+            await client.get_trending_tokens()
+
+
+@respx.mock
 async def test_async_ping_and_smart_stats():
     respx.get(f"{BASE_URL}/v2/ping").mock(
         return_value=httpx.Response(

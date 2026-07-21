@@ -55,7 +55,6 @@ class ClosePositionInput(TypedDict):
     orderType: TradeOrderType
     size: NotRequired[str]
     amount: NotRequired[str]
-    positionSizePercent: NotRequired[float]
     closePercent: NotRequired[float]
     price: NotRequired[str]
 

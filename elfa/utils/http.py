@@ -24,13 +24,18 @@ from elfa.version import VERSION
 DEFAULT_BASE_URL = "https://api.elfa.ai"
 
 
-def default_headers(api_key: str) -> Dict[str, str]:
-    return {
+def default_headers(
+    api_key: str, extra: Optional[Dict[str, str]] = None
+) -> Dict[str, str]:
+    headers = {
         "x-elfa-api-key": api_key,
         "User-Agent": f"elfa-sdk-python/{VERSION}",
         "Accept": "application/json",
         "Content-Type": "application/json",
     }
+    if extra:
+        headers.update(extra)
+    return headers
 
 
 def clean_params(params: Optional[Dict[str, Any]]) -> Dict[str, str]:
@@ -68,12 +73,13 @@ class SyncTransport:
         timeout: float = 30.0,
         retries: int = 3,
         retry_delay: float = 1.0,
+        headers: Optional[Dict[str, str]] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.retries = retries
         self.retry_delay = retry_delay
         self._client = httpx.Client(
-            headers=default_headers(api_key),
+            headers=default_headers(api_key, headers),
             timeout=timeout,
             follow_redirects=True,
         )
@@ -145,12 +151,13 @@ class AsyncTransport:
         timeout: float = 30.0,
         retries: int = 3,
         retry_delay: float = 1.0,
+        headers: Optional[Dict[str, str]] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.retries = retries
         self.retry_delay = retry_delay
         self._client = httpx.AsyncClient(
-            headers=default_headers(api_key),
+            headers=default_headers(api_key, headers),
             timeout=timeout,
             follow_redirects=True,
         )

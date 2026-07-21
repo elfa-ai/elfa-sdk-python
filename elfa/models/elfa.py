@@ -24,12 +24,17 @@ class ApiKeyStatus(ElfaModel):
     tier: Optional[str] = None
     daily_request_limit: Optional[int] = Field(None, alias="dailyRequestLimit")
     monthly_request_limit: Optional[int] = Field(None, alias="monthlyRequestLimit")
+    daily_limit: Optional[int] = Field(None, alias="dailyLimit")
+    monthly_limit: Optional[int] = Field(None, alias="monthlyLimit")
     expires_at: Optional[str] = Field(None, alias="expiresAt")
     is_expired: Optional[bool] = Field(None, alias="isExpired")
     scopes: Optional[List[str]] = None
     usage: Optional[dict] = None
     limits: Optional[dict] = None
     remaining_requests: Optional[dict] = Field(None, alias="remainingRequests")
+    subscription: Optional[dict] = None
+    allow_overage: Optional[bool] = Field(None, alias="allowOverage")
+    max_overage: Optional[int] = Field(None, alias="maxOverage")
 
 
 class ApiKeyStatusResponse(ElfaModel):

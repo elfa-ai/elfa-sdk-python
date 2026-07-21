@@ -47,9 +47,9 @@ def client():
         kwargs["base_url"] = BASE_URL
     if HMAC_SECRET:
         kwargs["hmac_secret"] = HMAC_SECRET
-    instance = ElfaClient(**kwargs)
     if STAGING_SECRET:
-        instance._transport._client.headers["x-staging-secret"] = STAGING_SECRET
+        kwargs["headers"] = {"x-staging-secret": STAGING_SECRET}
+    instance = ElfaClient(**kwargs)
     yield instance
     instance.close()
 

@@ -6,8 +6,13 @@ from elfa.client import _params as build
 from elfa.client.auto_client import AsyncAutoClient
 from elfa.client.base import parse_model
 from elfa.client.trade_client import AsyncTradeClient
-from elfa.exceptions import ElfaValidationError
-from elfa.models.chat import ChatResponse
+from elfa.exceptions import ElfaAPIError, ElfaValidationError
+from elfa.models.chat import (
+    ChatAnalysisType,
+    ChatAssetMetadata,
+    ChatResponse,
+    ChatSpeed,
+)
 from elfa.models.elfa import (
     AccountSmartStatsResponse,
     ApiKeyStatusResponse,
@@ -45,15 +50,18 @@ class AsyncElfaClient:
         retries: int = 3,
         retry_delay: float = 1.0,
         hmac_secret: Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
     ):
         if not api_key:
             raise ElfaValidationError("api_key is required")
 
         self._transport = AsyncTransport(
-            api_key, base_url, timeout, retries, retry_delay
+            api_key, base_url, timeout, retries, retry_delay, headers
         )
-        self.auto = AsyncAutoClient(self._transport, hmac_secret)
-        self.trade = AsyncTradeClient(self._transport, hmac_secret)
+        self.auto = AsyncAutoClient(transport=self._transport, hmac_secret=hmac_secret)
+        self.trade = AsyncTradeClient(
+            transport=self._transport, hmac_secret=hmac_secret
+        )
 
     async def __aenter__(self) -> "AsyncElfaClient":
         return self
@@ -73,6 +81,13 @@ class AsyncElfaClient:
 
     async def get_api_key_status(self) -> ApiKeyStatusResponse:
         return parse_model(ApiKeyStatusResponse, await self._get("/v2/key-status"))
+
+    async def test_connection(self) -> bool:
+        """Return True if the API is reachable and the key is accepted."""
+        try:
+            return (await self.ping()).success is True
+        except ElfaAPIError:
+            return False
 
     async def get_trending_tokens(
         self,
@@ -212,9 +227,9 @@ class AsyncElfaClient:
         message: Optional[str] = None,
         *,
         session_id: Optional[str] = None,
-        analysis_type: Optional[str] = None,
-        speed: Optional[str] = None,
-        asset_metadata: Optional[Dict[str, Any]] = None,
+        analysis_type: Optional[ChatAnalysisType] = None,
+        speed: Optional[ChatSpeed] = None,
+        asset_metadata: Optional[ChatAssetMetadata] = None,
     ) -> ChatResponse:
         body = build.chat_body(
             message, session_id, analysis_type, speed, asset_metadata

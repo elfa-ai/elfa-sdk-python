@@ -1,6 +1,6 @@
 # Elfa Python SDK Makefile
 
-.PHONY: help install install-dev test test-coverage lint format type-check clean build upload upload-test docs
+.PHONY: help install install-dev test test-coverage lint format type-check clean build upload upload-test
 
 # Default target
 help:
@@ -21,16 +21,13 @@ help:
 	@echo "  upload-test   Upload to TestPyPI"
 	@echo "  upload        Upload to PyPI"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  docs          Build documentation"
-	@echo ""
 
 # Development commands
 install:
 	pip install -e .
 
 install-dev:
-	pip install -e ".[dev,docs]"
+	pip install -e ".[dev]"
 
 test:
 	pytest
@@ -67,13 +64,6 @@ upload-test: build
 
 upload: build
 	python -m twine upload dist/*
-
-# Documentation
-docs:
-	cd docs && mkdocs build
-
-docs-serve:
-	cd docs && mkdocs serve
 
 # Example commands
 examples:

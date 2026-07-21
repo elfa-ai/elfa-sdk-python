@@ -1,7 +1,7 @@
 # Elfa AI Python SDK
 
 [![PyPI version](https://badge.fury.io/py/elfa-sdk.svg)](https://badge.fury.io/py/elfa-sdk)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Official Python SDK for the Elfa API v2 — social intelligence, AI chat, and the Auto/Trade engines for crypto. Sync and async clients, fully typed with Pydantic.
@@ -69,7 +69,21 @@ client = ElfaClient(
     retries=3,                       # retries for idempotent (GET) requests
     retry_delay=1.0,                 # base delay for exponential backoff
     hmac_secret=None,                # required for Auto/Trade mutations (see below)
+    headers=None,                    # extra headers sent on every request
 )
+
+# Quick reachability/auth check
+assert client.test_connection() is True
+```
+
+The Auto and Trade engines are also constructable standalone if you only need one:
+
+```python
+from elfa import TradeClient
+
+trade = TradeClient(api_key="your-api-key", hmac_secret="your-hmac-secret")
+# ... use trade.place_order(...) etc.
+trade.close()
 ```
 
 The API key is sent as the `x-elfa-api-key` header on every request. Read it from the environment in your app:

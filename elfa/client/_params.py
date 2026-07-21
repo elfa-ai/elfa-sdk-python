@@ -4,15 +4,12 @@ Each returns ``(path, query)`` or ``(path, body)`` so the sync and async clients
 share one source of truth for URL/param mapping and client-side validation.
 """
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
 
+from elfa.client.base import drop_none
 from elfa.exceptions import ElfaValidationError
 
 Query = Tuple[str, Dict[str, Any]]
-
-
-def _drop_none(params: Dict[str, Any]) -> Dict[str, Any]:
-    return {key: value for key, value in params.items() if value is not None}
 
 
 def _require_window_or_range(
@@ -37,7 +34,7 @@ def trending_tokens(
     min_mentions: Optional[int],
 ) -> Query:
     _require_window_or_range(time_window, from_time, to_time)
-    return "/v2/aggregations/trending-tokens", _drop_none(
+    return "/v2/aggregations/trending-tokens", drop_none(
         {
             "timeWindow": time_window,
             "from": from_time,
@@ -68,7 +65,7 @@ def keyword_mentions(
 ) -> Query:
     if not keywords and not account_name:
         raise ElfaValidationError("Either keywords or account_name must be provided")
-    return "/v2/data/keyword-mentions", _drop_none(
+    return "/v2/data/keyword-mentions", drop_none(
         {
             "keywords": keywords,
             "accountName": account_name,
@@ -92,7 +89,7 @@ def token_news(
     coin_ids: Optional[str],
     reposts: Optional[bool],
 ) -> Query:
-    return "/v2/data/token-news", _drop_none(
+    return "/v2/data/token-news", drop_none(
         {
             "timeWindow": time_window,
             "from": from_time,
@@ -115,7 +112,7 @@ def trending_cas(
     min_mentions: Optional[int],
 ) -> Query:
     _require_window_or_range(time_window, from_time, to_time)
-    return f"/v2/aggregations/trending-cas/{platform}", _drop_none(
+    return f"/v2/aggregations/trending-cas/{platform}", drop_none(
         {
             "timeWindow": time_window,
             "from": from_time,
@@ -138,7 +135,7 @@ def top_mentions(
 ) -> Query:
     if not ticker:
         raise ElfaValidationError("ticker is required")
-    return "/v2/data/top-mentions", _drop_none(
+    return "/v2/data/top-mentions", drop_none(
         {
             "ticker": ticker,
             "timeWindow": time_window,
@@ -160,7 +157,7 @@ def event_summary(
 ) -> Query:
     if not keywords:
         raise ElfaValidationError("keywords is required")
-    return "/v2/data/event-summary", _drop_none(
+    return "/v2/data/event-summary", drop_none(
         {
             "keywords": keywords,
             "from": from_time,
@@ -176,7 +173,7 @@ def trending_narratives(
     max_narratives: Optional[int],
     max_tweets_per_narrative: Optional[int],
 ) -> Query:
-    return "/v2/data/trending-narratives", _drop_none(
+    return "/v2/data/trending-narratives", drop_none(
         {
             "timeFrame": time_frame,
             "maxNarratives": max_narratives,
@@ -190,11 +187,11 @@ def chat_body(
     session_id: Optional[str],
     analysis_type: Optional[str],
     speed: Optional[str],
-    asset_metadata: Optional[Dict[str, Any]],
+    asset_metadata: Optional[Mapping[str, Any]],
 ) -> Dict[str, Any]:
     if (analysis_type or "chat") == "chat" and not (message and message.strip()):
         raise ElfaValidationError("message is required for chat analysis")
-    return _drop_none(
+    return drop_none(
         {
             "message": message,
             "sessionId": session_id,

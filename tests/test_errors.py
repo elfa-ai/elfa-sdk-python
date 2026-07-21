@@ -64,3 +64,47 @@ def test_rate_limit_reset_from_epoch():
         lambda name: "1700000000" if name == "x-ratelimit-reset" else None
     )
     assert reset == datetime.fromtimestamp(1700000000, tz=timezone.utc)
+
+
+def test_nested_message_object_with_inner_message():
+    with pytest.raises(ElfaAPIError) as exc:
+        raise_for_response(_response(400, {"message": {"message": "inner"}}))
+    assert exc.value.message == "inner"
+
+
+def test_nested_message_object_without_inner_message():
+    with pytest.raises(ElfaAPIError) as exc:
+        raise_for_response(_response(400, {"message": {"code": "X"}}))
+    assert exc.value.message == '{"code": "X"}'
+
+
+def test_rate_limit_reset_from_http_date():
+    headers = {"retry-after": "Wed, 21 Oct 2015 07:28:00 GMT"}
+    with pytest.raises(ElfaRateLimitError) as exc:
+        raise_for_response(_response(429, {"message": "slow"}, headers))
+    assert exc.value.retry_after is None
+    assert exc.value.reset_time is not None
+    assert exc.value.reset_time.year == 2015
+
+
+def test_rate_limit_reset_garbage_retry_after_is_none():
+    assert (
+        compute_rate_limit_reset(
+            lambda name: "not-a-date" if name == "retry-after" else None
+        )
+        is None
+    )
+
+
+def test_ratelimit_reset_falls_through_to_retry_after():
+    def headers(name):
+        return {"x-ratelimit-reset": "notanumber", "retry-after": "5"}.get(name)
+
+    reset = compute_rate_limit_reset(headers)
+    assert reset is not None
+
+
+def test_request_id_forwarded_on_errors():
+    with pytest.raises(ElfaAuthenticationError) as exc:
+        raise_for_response(_response(401, {"message": "no"}, {"x-request-id": "req-1"}))
+    assert exc.value.request_id == "req-1"

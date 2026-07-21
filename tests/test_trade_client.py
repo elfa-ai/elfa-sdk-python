@@ -7,8 +7,9 @@ import httpx
 import pytest
 import respx
 
-from elfa.client.trade_client import TradeClient
-from elfa.utils.http import SyncTransport
+from elfa.client.trade_client import AsyncTradeClient, TradeClient
+from elfa.exceptions import ElfaValidationError
+from elfa.utils.http import AsyncTransport, SyncTransport
 from tests.conftest import BASE_URL
 
 
@@ -35,7 +36,7 @@ def test_place_order_signs_exact_compact_bytes():
         )
 
     respx.post(f"{BASE_URL}/v2/trade/orders").mock(side_effect=handler)
-    client = TradeClient(_transport(), hmac_secret="sec")
+    client = TradeClient(transport=_transport(), hmac_secret="sec")
     order = {
         "exchange": "hyperliquid",
         "symbol": "BTC",
@@ -63,7 +64,7 @@ def test_preview_order_parses_and_needs_no_secret():
     respx.post(f"{BASE_URL}/v2/trade/orders/preview").mock(
         return_value=httpx.Response(200, json={"success": True, "wouldExecute": True})
     )
-    result = TradeClient(_transport()).preview_order(
+    result = TradeClient(transport=_transport()).preview_order(
         {
             "exchange": "hyperliquid",
             "symbol": "BTC",
@@ -92,7 +93,43 @@ def test_trade_methods_hit_expected_paths(method, path):
     route = respx.post(f"{BASE_URL}{path}").mock(
         return_value=httpx.Response(200, json={"success": True, "wouldExecute": True})
     )
-    getattr(TradeClient(_transport()), method)(
+    getattr(TradeClient(transport=_transport()), method)(
         {"exchange": "hyperliquid", "symbol": "BTC"}
     )
     assert route.called
+
+
+@respx.mock
+async def test_async_place_order_signs_exact_bytes():
+    captured = {}
+
+    def handler(request):
+        captured["body"] = request.content.decode()
+        captured["ts"] = request.headers.get("x-elfa-timestamp")
+        captured["sig"] = request.headers.get("x-elfa-signature")
+        return httpx.Response(200, json={"success": True, "orderId": "o1"})
+
+    respx.post(f"{BASE_URL}/v2/trade/orders").mock(side_effect=handler)
+    client = AsyncTradeClient(
+        transport=AsyncTransport("k", BASE_URL, retries=0), hmac_secret="sec"
+    )
+    order = {
+        "exchange": "hyperliquid",
+        "symbol": "BTC",
+        "side": "buy",
+        "orderType": "market",
+    }
+    result = await client.place_order(order)
+    assert result.order_id == "o1"
+    body = captured["body"]
+    payload = f'{captured["ts"]}POST/orders{body}'
+    assert (
+        captured["sig"]
+        == hmac.new(b"sec", payload.encode(), hashlib.sha256).hexdigest()
+    )
+    await client._transport.close()
+
+
+def test_standalone_requires_api_key():
+    with pytest.raises(ElfaValidationError):
+        TradeClient()

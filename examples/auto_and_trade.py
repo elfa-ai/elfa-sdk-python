@@ -32,37 +32,34 @@ NOTIFY_QUERY = {
 
 
 def main() -> None:
-    client = ElfaClient(
+    with ElfaClient(
         api_key=os.environ["ELFA_API_KEY"],
         hmac_secret=os.environ.get("ELFA_HMAC_SECRET"),
-    )
+    ) as client:
+        validation = client.auto.validate_query(NOTIFY_QUERY)
+        print("valid:", validation.valid)
 
-    validation = client.auto.validate_query(NOTIFY_QUERY)
-    print("valid:", validation.valid)
+        created = client.auto.create_query(NOTIFY_QUERY)
+        query_id = created.id or created.query_id
+        print("created:", query_id)
 
-    created = client.auto.create_query(NOTIFY_QUERY)
-    query_id = created.id or created.query_id
-    print("created:", query_id)
+        polled = client.auto.get_query(query_id)
+        print("status:", polled.status)
 
-    polled = client.auto.get_query(query_id)
-    print("status:", polled.status)
+        client.auto.cancel_query(query_id)
+        client.auto.delete_query(query_id)
 
-    client.auto.cancel_query(query_id)
-    client.auto.delete_query(query_id)
-
-    # Preview an order (no execution). Requires a linked exchange account.
-    preview = client.trade.preview_order(
-        {
-            "exchange": "hyperliquid",
-            "symbol": "BTC",
-            "side": "buy",
-            "orderType": "market",
-            "size": "0.001",
-        }
-    )
-    print("would execute:", preview.would_execute)
-
-    client.close()
+        # Preview an order (no execution). Requires a linked exchange account.
+        preview = client.trade.preview_order(
+            {
+                "exchange": "hyperliquid",
+                "symbol": "BTC",
+                "side": "buy",
+                "orderType": "market",
+                "size": "0.001",
+            }
+        )
+        print("would execute:", preview.would_execute)
 
 
 if __name__ == "__main__":
