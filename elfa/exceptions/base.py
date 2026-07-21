@@ -1,26 +1,28 @@
 """
-Base exception classes for the Elfa SDK
+Exception hierarchy for the Elfa SDK
 """
 
-from typing import Any, Dict, Optional
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
+from typing import Any, Callable, Optional
 
 import httpx
 
 
 class ElfaAPIError(Exception):
-    """Base exception for all Elfa API errors"""
+    """Base exception for all Elfa SDK errors."""
 
     def __init__(
         self,
         message: str,
         status_code: Optional[int] = None,
-        response_data: Optional[Dict[str, Any]] = None,
+        response_data: Optional[Any] = None,
         request_id: Optional[str] = None,
     ):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
-        self.response_data = response_data or {}
+        self.response_data = response_data
         self.request_id = request_id
 
     def __str__(self) -> str:
@@ -33,45 +35,49 @@ class ElfaAPIError(Exception):
 
 
 class ElfaAuthenticationError(ElfaAPIError):
-    """Raised when API key is invalid or missing"""
+    """Raised when the API key is invalid or missing (HTTP 401)."""
 
-    def __init__(self, message: str = "Invalid or missing API key"):
+    def __init__(self, message: str = "Authentication failed"):
         super().__init__(message, status_code=401)
 
 
 class ElfaRateLimitError(ElfaAPIError):
-    """Raised when API rate limit is exceeded"""
+    """Raised when the API rate limit is exceeded (HTTP 429)."""
 
     def __init__(
         self,
         message: str = "API rate limit exceeded",
         retry_after: Optional[int] = None,
-        limit_type: Optional[str] = None,
+        reset_time: Optional[datetime] = None,
+        response_data: Optional[Any] = None,
     ):
-        super().__init__(message, status_code=429)
+        super().__init__(message, status_code=429, response_data=response_data)
         self.retry_after = retry_after
-        self.limit_type = limit_type
+        self.reset_time = reset_time
 
 
 class ElfaNotFoundError(ElfaAPIError):
-    """Raised when requested resource is not found"""
+    """Raised when a requested resource is not found (HTTP 404)."""
 
     def __init__(self, message: str = "Resource not found"):
         super().__init__(message, status_code=404)
 
 
 class ElfaValidationError(ElfaAPIError):
-    """Raised when request parameters are invalid"""
+    """Raised for invalid request parameters, client-side or server-side (HTTP 400)."""
 
     def __init__(
-        self, message: str, validation_errors: Optional[Dict[str, Any]] = None
+        self,
+        message: str,
+        validation_errors: Optional[Any] = None,
+        status_code: Optional[int] = None,
     ):
-        super().__init__(message, status_code=400)
-        self.validation_errors = validation_errors or {}
+        super().__init__(message, status_code=status_code)
+        self.validation_errors = validation_errors
 
 
 class ElfaNetworkError(ElfaAPIError):
-    """Raised when network/connection issues occur"""
+    """Raised when a network/connection issue occurs."""
 
     def __init__(self, message: str, original_error: Optional[Exception] = None):
         super().__init__(message)
@@ -79,50 +85,86 @@ class ElfaNetworkError(ElfaAPIError):
 
 
 class ElfaTimeoutError(ElfaAPIError):
-    """Raised when request times out"""
+    """Raised when a request times out."""
 
     def __init__(self, message: str = "Request timed out"):
         super().__init__(message)
 
 
-def handle_http_error(response: httpx.Response) -> None:
-    """
-    Convert HTTP response errors to appropriate Elfa exceptions
-    """
+def is_retryable_error(error: Exception) -> bool:
+    """Retry rate limits, network/timeout errors, and 5xx server responses."""
+    if isinstance(error, (ElfaRateLimitError, ElfaNetworkError, ElfaTimeoutError)):
+        return True
+    if isinstance(error, ElfaAPIError) and error.status_code is not None:
+        return 500 <= error.status_code < 600
+    return False
+
+
+def _extract_message(data: Any) -> Optional[str]:
+    if isinstance(data, str):
+        return data or None
+    if isinstance(data, dict):
+        return data.get("message") or data.get("error") or data.get("detail")
+    return None
+
+
+def compute_rate_limit_reset(
+    get_header: Callable[[str], Optional[str]],
+) -> Optional[datetime]:
+    """Derive a reset time from ``x-ratelimit-reset`` (epoch) or ``retry-after``."""
+    reset = get_header("x-ratelimit-reset")
+    if reset:
+        try:
+            return datetime.fromtimestamp(int(reset), tz=timezone.utc)
+        except ValueError:
+            pass
+
+    retry_after = get_header("retry-after")
+    if retry_after:
+        trimmed = retry_after.strip()
+        if trimmed.isdigit():
+            return datetime.now(tz=timezone.utc) + timedelta(seconds=int(trimmed))
+        try:
+            return parsedate_to_datetime(trimmed)
+        except (TypeError, ValueError):
+            return None
+
+    return None
+
+
+def raise_for_response(response: httpx.Response) -> None:
+    """Map a non-2xx httpx response to the matching Elfa exception."""
     try:
-        error_data = response.json()
+        data: Any = response.json()
     except Exception:
-        error_data = {}
+        data = response.text
 
-    message = error_data.get("message", f"HTTP {response.status_code}")
+    message = _extract_message(data) or f"HTTP {response.status_code}"
     request_id = response.headers.get("x-request-id")
+    status = response.status_code
 
-    if response.status_code == 401:
+    if status == 401:
         raise ElfaAuthenticationError(message)
-    elif response.status_code == 404:
+    if status == 404:
         raise ElfaNotFoundError(message)
-    elif response.status_code == 429:
+    if status == 429:
         retry_after = response.headers.get("retry-after")
-        retry_after_int = int(retry_after) if retry_after else None
         raise ElfaRateLimitError(
             message,
-            retry_after=retry_after_int,
-            limit_type=error_data.get("limit_type"),
+            retry_after=(
+                int(retry_after) if retry_after and retry_after.isdigit() else None
+            ),
+            reset_time=compute_rate_limit_reset(response.headers.get),
+            response_data=data,
         )
-    elif response.status_code == 400:
-        validation_errors = error_data.get("errors", {})
-        raise ElfaValidationError(message, validation_errors)
-    elif response.status_code >= 500:
-        raise ElfaAPIError(
-            f"Server error: {message}",
-            status_code=response.status_code,
-            response_data=error_data,
-            request_id=request_id,
-        )
-    else:
-        raise ElfaAPIError(
-            message,
-            status_code=response.status_code,
-            response_data=error_data,
-            request_id=request_id,
-        )
+    if status == 400:
+        errors = data.get("errors") if isinstance(data, dict) else None
+        raise ElfaValidationError(message, validation_errors=errors, status_code=400)
+
+    raise ElfaAPIError(
+        message, status_code=status, response_data=data, request_id=request_id
+    )
+
+
+# Backwards-compatible alias.
+handle_http_error = raise_for_response

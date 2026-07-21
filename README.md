@@ -4,16 +4,19 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Official Python SDK for the Elfa API - Social media analytics and insights for cryptocurrency and blockchain projects.
+Official Python SDK for the Elfa API v2 — social intelligence, AI chat, and the Auto/Trade engines for crypto. Sync and async clients, fully typed with Pydantic.
 
 ## Features
 
-- 🚀 **Easy to use** - Simple, intuitive API
-- ⚡ **Async support** - Both synchronous and asynchronous clients
-- 🔒 **Type safe** - Full type hints with Pydantic models
-- 🛡️ **Error handling** - Comprehensive error handling with custom exceptions
-- 🔄 **Auto-retry** - Automatic retry logic with exponential backoff
-- 📊 **Complete coverage** - All Elfa API v2 endpoints supported
+- **Social intelligence** — trending tokens, mentions, narratives, smart stats, event summaries
+- **AI chat** — market analysis and conversational chat via `client.chat`
+- **Auto condition engine** — build EQL queries that notify or trade via `client.auto`
+- **Direct trading** — place orders and manage positions via `client.trade`
+- **Sync and async** — `ElfaClient` and `AsyncElfaClient`, same surface
+- **Typed** — Pydantic v2 models, full type hints
+- **Robust** — retries with backoff, typed errors, HMAC request signing
+
+> The SDK returns processed metadata and tweet links only — never raw tweet content. For raw tweets, call the X (Twitter) API directly using the returned links/ids.
 
 ## Installation
 
@@ -21,287 +24,197 @@ Official Python SDK for the Elfa API - Social media analytics and insights for c
 pip install elfa-sdk
 ```
 
-Or with async support:
+## Quick start
 
-```bash
-pip install elfa-sdk[dev]
-```
-
-## Quick Start
-
-### Synchronous Client
+### Synchronous
 
 ```python
 from elfa import ElfaClient
 
-# Initialize the client
-client = ElfaClient(api_key="your-api-key-here")
+client = ElfaClient(api_key="your-api-key")
 
-# Get trending tokens
 trending = client.get_trending_tokens(time_window="24h")
-print(f"Found {len(trending.data.data)} trending tokens")
-
 for token in trending.data.data:
-    print(f"{token.token}: {token.current_count} mentions ({token.change_percent:+.1f}%)")
+    print(token.token, token.current_count, f"{token.change_percent:+.1f}%")
 
-# Search for keyword mentions
-mentions = client.get_keyword_mentions(keywords="bitcoin,ethereum", limit=10)
-print(f"Found {len(mentions.data)} mentions")
-
+mentions = client.get_keyword_mentions(keywords="bitcoin,ethereum", time_window="1h")
 for mention in mentions.data:
-    print(f"@{mention.account.username}: {mention.like_count} likes")
+    print(mention.link, mention.like_count)
+
+answer = client.chat("What's the sentiment on Bitcoin today?")
+print(answer.data.message)
 ```
 
-### Asynchronous Client
+### Asynchronous
 
 ```python
 import asyncio
 from elfa import AsyncElfaClient
 
 async def main():
-    async with AsyncElfaClient(api_key="your-api-key-here") as client:
-        # Get trending tokens
-        trending = await client.get_trending_tokens(time_window="24h")
-        
-        # Get account stats
-        stats = await client.get_account_smart_stats(username="elonmusk")
-        
-        print(f"Smart following count: {stats.data.smart_following_count}")
+    async with AsyncElfaClient(api_key="your-api-key") as client:
+        stats = await client.get_account_smart_stats("elonmusk")
+        print(stats.data.smart_following_count)
 
 asyncio.run(main())
 ```
 
-## API Reference
-
-### Authentication
-
-All API calls require an API key. Get yours at [elfa.ai](https://elfa.ai).
-
-```python
-from elfa import ElfaClient
-
-client = ElfaClient(
-    api_key="your-api-key",
-    base_url="https://api.elfa.ai",  # Optional, defaults to production
-    timeout=30.0,                    # Optional, request timeout in seconds
-    max_retries=3,                   # Optional, max retries for failed requests
-)
-```
-
-### Endpoints
-
-#### Health Check
-
-```python
-# Ping the API
-response = client.ping()
-print(response.data.message)  # "pong"
-```
-
-#### API Key Status
-
-```python
-# Check your API key status and usage
-status = client.get_api_key_status()
-print(f"Daily usage: {status.data.usage.today}")
-print(f"Monthly limit: {status.data.monthly_limit}")
-```
-
-#### Trending Tokens
-
-```python
-# Get trending cryptocurrency tokens
-trending = client.get_trending_tokens(
-    time_window="24h",    # "1h", "24h", "7d"
-    page=1,               # Page number
-    page_size=50,         # Results per page (max 100)
-    min_mentions=5        # Minimum mentions required
-)
-
-for token in trending.data.data:
-    print(f"{token.token}: {token.current_count} mentions")
-```
-
-#### Keyword Mentions
-
-```python
-# Search mentions by keywords
-mentions = client.get_keyword_mentions(
-    keywords="bitcoin,ethereum",     # Up to 5 keywords, comma-separated
-    period="24h",                    # Time period
-    limit=20,                        # Max results (max 30)
-    search_type="or"                 # "and" or "or"
-)
-
-# Search by account name
-mentions = client.get_keyword_mentions(
-    account_name="elonmusk",
-    period="7d"
-)
-```
-
-#### Account Smart Stats
-
-```python
-# Get smart statistics for a Twitter account
-stats = client.get_account_smart_stats(username="elonmusk")
-print(f"Engagement ratio: {stats.data.follower_engagement_ratio}")
-print(f"Smart following: {stats.data.smart_following_count}")
-```
-
-#### Token News
-
-```python
-# Get token-related news mentions
-news = client.get_token_news(
-    coin_ids="bitcoin,ethereum",     # CoinGecko coin IDs
-    page=1,
-    page_size=20
-)
-```
-
-#### Trending Contract Addresses
-
-```python
-# Get trending contract addresses on Twitter
-twitter_cas = client.get_trending_contract_addresses_twitter(
-    time_window="24h",
-    min_mentions=5
-)
-
-# Get trending contract addresses on Telegram  
-telegram_cas = client.get_trending_contract_addresses_telegram(
-    time_window="24h",
-    min_mentions=5
-)
-```
-
-## Error Handling
-
-The SDK provides specific exception types for different error scenarios:
-
-```python
-from elfa import ElfaClient
-from elfa.exceptions import (
-    ElfaAPIError,
-    ElfaAuthenticationError,
-    ElfaRateLimitError,
-    ElfaValidationError,
-    ElfaNetworkError
-)
-
-client = ElfaClient(api_key="your-api-key")
-
-try:
-    trending = client.get_trending_tokens()
-except ElfaAuthenticationError:
-    print("Invalid API key")
-except ElfaRateLimitError as e:
-    print(f"Rate limited. Retry after {e.retry_after} seconds")
-except ElfaValidationError as e:
-    print(f"Invalid parameters: {e.validation_errors}")
-except ElfaNetworkError:
-    print("Network connection error")
-except ElfaAPIError as e:
-    print(f"API error: {e}")
-```
-
 ## Configuration
 
-### Environment Variables
-
-You can set your API key using an environment variable:
-
-```bash
-export ELFA_API_KEY="your-api-key-here"
+```python
+client = ElfaClient(
+    api_key="your-api-key",
+    base_url="https://api.elfa.ai",  # default (production)
+    timeout=30.0,                    # per-request timeout, seconds
+    retries=3,                       # retries for idempotent (GET) requests
+    retry_delay=1.0,                 # base delay for exponential backoff
+    hmac_secret=None,                # required for Auto/Trade mutations (see below)
+)
 ```
+
+The API key is sent as the `x-elfa-api-key` header on every request. Read it from the environment in your app:
 
 ```python
 import os
 from elfa import ElfaClient
 
-client = ElfaClient(api_key=os.getenv("ELFA_API_KEY"))
+client = ElfaClient(api_key=os.environ["ELFA_API_KEY"])
 ```
 
-### Timeouts and Retries
+## Core data & chat
+
+All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
+
+| Method | Endpoint |
+| --- | --- |
+| `ping()` | `/v2/ping` |
+| `get_api_key_status()` | `/v2/key-status` |
+| `get_trending_tokens(...)` | `/v2/aggregations/trending-tokens` |
+| `get_account_smart_stats(username)` | `/v2/account/smart-stats` |
+| `get_keyword_mentions(...)` | `/v2/data/keyword-mentions` |
+| `get_token_news(...)` | `/v2/data/token-news` |
+| `get_trending_cas_twitter(...)` | `/v2/aggregations/trending-cas/twitter` |
+| `get_trending_cas_telegram(...)` | `/v2/aggregations/trending-cas/telegram` |
+| `get_top_mentions(ticker, ...)` | `/v2/data/top-mentions` |
+| `get_event_summary(keywords, ...)` | `/v2/data/event-summary` |
+| `get_trending_narratives(...)` | `/v2/data/trending-narratives` |
+| `chat(message, ...)` | `/v2/chat` |
+
+Time-ranged endpoints accept either `time_window="24h"` or both `from_time` and `to_time` (unix seconds).
+
+## Auto condition engine (`client.auto`)
+
+Build [EQL](https://docs.elfa.ai) queries that watch conditions and fire actions (notify, webhook, or trade). Notification-only queries need no secret; trade-action queries require an `hmac_secret`.
 
 ```python
-client = ElfaClient(
-    api_key="your-api-key",
-    timeout=60.0,        # 60 second timeout
-    max_retries=5,       # Retry up to 5 times
-    retry_delay=2.0      # Wait 2 seconds between retries
+query = {
+    "query": {
+        "conditions": {
+            "AND": [{
+                "source": "price", "method": "current",
+                "args": {"symbol": "BTC", "exchange": "hyperliquid"},
+                "operator": ">", "value": 250000,
+            }]
+        },
+        "actions": [{"stepId": "notify", "type": "notify", "params": {"message": "BTC > 250k"}}],
+        "expiresIn": "24h",
+    },
+    "title": "btc breakout alert",
+}
+
+client.auto.validate_query(query)
+created = client.auto.create_query(query)
+query_id = created.id or created.query_id
+
+status = client.auto.get_query(query_id)
+client.auto.cancel_query(query_id)
+client.auto.delete_query(query_id)
+```
+
+Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, exchanges (`list_exchanges`/`connect_exchange`/`disconnect_exchange`), and `validate_symbol`.
+
+### Streaming notifications (SSE)
+
+```python
+for event in client.auto.stream_query(query_id):
+    print(event.event, event.data)
+
+# async
+async for event in async_client.auto.stream_all():
+    print(event.event, event.data)
+```
+
+## Direct trading (`client.trade`)
+
+Trade a Privy-linked exchange account. All writes require an `hmac_secret`; previews do not execute and are free. **Sizes and prices are decimal strings.**
+
+```python
+client = ElfaClient(api_key="your-api-key", hmac_secret="your-hmac-secret")
+
+preview = client.trade.preview_order({
+    "exchange": "hyperliquid", "symbol": "BTC",
+    "side": "buy", "orderType": "market", "size": "0.001",
+})
+
+if preview.would_execute:
+    result = client.trade.place_order({
+        "exchange": "hyperliquid", "symbol": "BTC",
+        "side": "buy", "orderType": "market", "size": "0.001",
+    })
+    print(result.order_id, result.filled_size, result.avg_fill_price)
+```
+
+Methods: `preview_order`, `place_order`, `cancel_order`, `modify_order`, `preview_close_position`, `close_position`, `preview_set_position_tpsl`, `set_position_tpsl`.
+
+## HMAC signing
+
+Auto trade-action queries and all `client.trade` writes are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://docs.elfa.ai).
+
+## Error handling
+
+```python
+from elfa import (
+    ElfaAPIError,
+    ElfaAuthenticationError,
+    ElfaRateLimitError,
+    ElfaValidationError,
+    ElfaNetworkError,
 )
+
+try:
+    client.get_trending_tokens(time_window="24h")
+except ElfaAuthenticationError:
+    ...  # bad/missing API key
+except ElfaRateLimitError as e:
+    print("retry after", e.retry_after, "reset", e.reset_time)
+except ElfaValidationError as e:
+    print("invalid params", e.validation_errors)
+except ElfaNetworkError:
+    ...  # connection problem
+except ElfaAPIError as e:
+    print("api error", e.status_code, e)
 ```
 
-## Rate Limiting
-
-The SDK automatically handles rate limiting and will retry requests when rate limits are hit. You can check your current usage:
-
-```python
-status = client.get_api_key_status()
-print(f"Requests remaining today: {status.data.usage.remaining_daily}")
-print(f"Requests remaining this month: {status.data.usage.remaining_monthly}")
-```
+Idempotent (GET) requests are retried with exponential backoff on network errors, rate limits, and 5xx responses. Mutations are not retried automatically.
 
 ## Development
-
-### Installation for Development
 
 ```bash
 git clone https://github.com/elfa-ai/elfa-sdk-python.git
 cd elfa-sdk-python
-
-# Install with development dependencies
 pip install -e ".[dev]"
+
+make check   # flake8 + mypy + pytest
+make format  # black + isort
 ```
 
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=elfa --cov-report=html
-
-# Run specific test file
-pytest tests/test_sync_client.py
-```
-
-### Code Formatting
-
-```bash
-# Format code
-black .
-isort .
-
-# Type checking
-mypy elfa/
-
-# Linting
-flake8 elfa/
-```
+Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`, `ELFA_HMAC_SECRET`); otherwise they skip.
 
 ## Support
 
-- 📚 [Documentation](https://docs.elfa.ai)
-- 🐛 [Bug Reports](https://github.com/elfa-ai/elfa-sdk-python/issues)
-- 💬 [Discord Community](https://discord.gg/elfa)
-- 📧 [Email Support](mailto:support@elfa.ai)
+- [Documentation](https://docs.elfa.ai)
+- [Issues](https://github.com/elfa-ai/elfa-sdk-python/issues)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Changelog
-
-### 2.0.0 (2024-06-20)
-
-- Initial release of Python SDK for Elfa API v2
-- Support for all v2 endpoints
-- Both sync and async clients
-- Comprehensive error handling
-- Full type safety with Pydantic models
-- Automatic retry logic
-- Rate limiting support
+MIT — see [LICENSE](LICENSE).

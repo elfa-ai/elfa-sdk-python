@@ -151,3 +151,5 @@ Thumbs.db
 
 # MCP configuration
 .mcp.json
+# Internal handoff notes (not for publish)
+.handoff/

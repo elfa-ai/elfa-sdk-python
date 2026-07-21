@@ -1,5 +1,5 @@
 """
-Elfa SDK Exception Classes
+Elfa SDK exception classes
 """
 
 from elfa.exceptions.base import (
@@ -10,7 +10,10 @@ from elfa.exceptions.base import (
     ElfaRateLimitError,
     ElfaTimeoutError,
     ElfaValidationError,
+    compute_rate_limit_reset,
     handle_http_error,
+    is_retryable_error,
+    raise_for_response,
 )
 
 __all__ = [
@@ -21,5 +24,8 @@ __all__ = [
     "ElfaValidationError",
     "ElfaNetworkError",
     "ElfaTimeoutError",
+    "is_retryable_error",
+    "compute_rate_limit_reset",
+    "raise_for_response",
     "handle_http_error",
 ]

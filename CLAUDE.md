@@ -28,19 +28,23 @@ See `AGENT.md` for complete architecture details. Key Claude Code considerations
 
 ### File Navigation Patterns
 When exploring the codebase, reference components by their file paths:
-- `elfa/client/elfa_client.py:28` - Main ElfaClient class
-- `elfa/client/async_client.py:28` - AsyncElfaClient class  
+- `elfa/client/elfa_client.py` - Sync `ElfaClient` (data + chat, `.auto`/`.trade`)
+- `elfa/client/async_client.py` - `AsyncElfaClient`
+- `elfa/client/auto_client.py` / `trade_client.py` - Auto/Trade engines
+- `elfa/client/_params.py` - shared data param builders
+- `elfa/utils/{http,hmac,sse}.py` - transport, signing, SSE
 - `elfa/models/__init__.py` - All available Pydantic models
 - `elfa/exceptions/__init__.py` - Exception hierarchy
 
 ### Code Generation Guidelines
 - Always import required types from `elfa.models` and `elfa.exceptions`
 - Follow existing client method patterns for consistency
-- Use `self._make_request()` helper for HTTP calls in client classes
-- Validate responses with Pydantic models before returning
+- Go through the transport (`self._transport.request_json(...)`) and `parse_model(...)`
+- Add data param mapping to `elfa/client/_params.py`, not inline
+- For Auto/Trade mutations, sign via `SignedClient` and send compact bytes (`content=`)
 
 ### Testing Approach
 - Create both sync and async test variants for new client methods
-- Mock HTTP responses using `pytest-httpx` 
+- Mock HTTP responses using `respx` (works for sync and async httpx)
 - Test error scenarios with appropriate exception assertions
 - Maintain test coverage above 90% for new code
