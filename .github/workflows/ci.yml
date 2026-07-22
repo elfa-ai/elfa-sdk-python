@@ -38,20 +38,11 @@ jobs:
         
       - name: Run tests with coverage
         run: make test-coverage
-        
-      - name: Upload coverage reports
-        if: matrix.python-version == '3.11'
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./htmlcov/index.html
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
 
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     
     steps:
       - name: Checkout code
@@ -74,7 +65,7 @@ jobs:
         run: |
           python examples/basic_usage.py
           python examples/async_usage.py
-          python examples/error_handling.py
+          python examples/auto_and_trade.py
         continue-on-error: true # Don't fail CI if API key not available
 
   security:

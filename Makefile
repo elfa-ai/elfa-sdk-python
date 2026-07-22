@@ -33,7 +33,7 @@ test:
 	pytest
 
 test-coverage:
-	pytest --cov=elfa --cov-report=html --cov-report=term-missing
+	pytest --cov=elfa --cov-report=xml --cov-report=term-missing
 
 lint:
 	flake8 elfa/ tests/ examples/
