@@ -19,28 +19,9 @@ jobs:
 
       - name: Validate workflow files
         run: |
-          # Check if workflow files are valid YAML
-          for file in .github/workflows/*.yml .github/workflows/*.yaml; do
-            if [ -f "$file" ]; then
-              echo "Validating $file..."
-              # Use GitHub's action-validator or a simple YAML parser
-              python -c "
-              import yaml
-              import sys
-              try:
-                  with open('$file', 'r') as f:
-                      yaml.safe_load(f)
-                  print('✅ $file is valid')
-              except yaml.YAMLError as e:
-                  print('❌ $file has YAML syntax error:', e)
-                  sys.exit(1)
-              except Exception as e:
-                  print('❌ Error validating $file:', e)
-                  sys.exit(1)
-              "
-            fi
-          done
-          
+          python -m pip install --quiet pyyaml
+          python -c "import glob, yaml; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml') + glob.glob('.github/workflows/*.yaml')]; print('workflows valid')"
+
       - name: Check for required configuration
         run: |
           echo "🔍 Checking required configuration for workflows..."

@@ -1,6 +1,6 @@
 # Elfa Python SDK Makefile
 
-.PHONY: help install install-dev test test-coverage lint format type-check clean build upload upload-test docs
+.PHONY: help install install-dev test test-coverage lint format type-check clean build upload upload-test
 
 # Default target
 help:
@@ -21,22 +21,19 @@ help:
 	@echo "  upload-test   Upload to TestPyPI"
 	@echo "  upload        Upload to PyPI"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  docs          Build documentation"
-	@echo ""
 
 # Development commands
 install:
 	pip install -e .
 
 install-dev:
-	pip install -e ".[dev,docs]"
+	pip install -e ".[dev]"
 
 test:
 	pytest
 
 test-coverage:
-	pytest --cov=elfa --cov-report=html --cov-report=term-missing
+	pytest --cov=elfa --cov-report=xml --cov-report=term-missing
 
 lint:
 	flake8 elfa/ tests/ examples/
@@ -68,13 +65,6 @@ upload-test: build
 upload: build
 	python -m twine upload dist/*
 
-# Documentation
-docs:
-	cd docs && mkdocs build
-
-docs-serve:
-	cd docs && mkdocs serve
-
 # Example commands
 examples:
 	@echo "Running basic example:"
@@ -84,9 +74,9 @@ examples-async:
 	@echo "Running async example:"
 	python examples/async_usage.py
 
-examples-errors:
-	@echo "Running error handling example:"
-	python examples/error_handling.py
+examples-auto:
+	@echo "Running auto + trade example:"
+	python examples/auto_and_trade.py
 
 # CI/CD simulation
 ci: install-dev lint type-check test-coverage

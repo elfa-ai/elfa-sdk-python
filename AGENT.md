@@ -4,13 +4,13 @@ This file provides base instructions for all AI coding assistants (Claude Code, 
 
 ## Project Overview
 
-**Elfa Python SDK** - Official Python SDK for the Elfa API providing social media analytics and insights for cryptocurrency and blockchain projects.
+**Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, and the Auto/Trade engines for crypto. V2-only (no V1 surface).
 
 ### Technology Stack
-- **Language**: Python 3.8+
+- **Language**: Python 3.9+
 - **HTTP Client**: httpx (sync/async support)
 - **Data Models**: Pydantic v2 for type safety
-- **Testing**: pytest with coverage
+- **Testing**: pytest + respx (sync/async mocking)
 - **Code Quality**: black, isort, flake8, mypy
 - **Build**: setuptools with pyproject.toml
 
@@ -40,16 +40,17 @@ make format    # black + isort formatting
 
 ## Architecture Principles
 
-### Dual API Design
-This SDK implements a unique dual-API architecture:
-1. **Elfa API v2** (required) - Core analytics and sanitized metadata
-2. **Twitter API** (optional) - User-provided API key for raw content enhancement
+### Data policy
+The SDK returns processed metadata and tweet links only — never raw tweet text.
+For raw content, call the X (Twitter) API directly with those links/ids.
 
 ### Client Structure
-- **Sync Client**: `ElfaClient` - Main synchronous interface
-- **Async Client**: `AsyncElfaClient` - Asynchronous operations
-- **Enhancement Layer**: `ResponseEnhancer` - Twitter API integration
-- **Compatibility Layer**: `V1CompatibilityLayer` - Legacy API support
+- **Sync Client**: `ElfaClient` - data + AI chat, with `.auto` and `.trade`
+- **Async Client**: `AsyncElfaClient` - async mirror of `ElfaClient`
+- **Auto engine**: `AutoClient` / `AsyncAutoClient` (`/v2/auto/*`) - EQL queries, drafts, sessions, executions, exchanges, SSE streams
+- **Trade**: `TradeClient` / `AsyncTradeClient` (`/v2/trade/*`) - orders and positions
+- **Transport**: `SyncTransport` / `AsyncTransport` (retries, error mapping, SSE)
+- **Signing**: Auto/Trade mutations are HMAC-signed when `hmac_secret` is set. Sign `timestamp+METHOD+mounted_path+body`; the body must be the exact compact-JSON bytes sent (httpx `content=`, never `json=`).
 
 ### Error Handling Pattern
 ```python
@@ -77,22 +78,13 @@ class NewModel(BaseModel):
 ```
 
 ### Client Methods
-Follow this pattern for new client methods:
+Data param mapping lives once in `elfa/client/_params.py` (shared by sync + async).
+Methods stay thin:
 ```python
 def new_method(self, param: str) -> ResponseModel:
-    """Method description.
-    
-    Args:
-        param: Parameter description
-        
-    Returns:
-        ResponseModel with result data
-        
-    Raises:
-        ElfaAPIError: If API request fails
-    """
-    response = self._make_request("GET", "/endpoint", params={"param": param})
-    return ResponseModel.model_validate(response.json())
+    """Method description."""
+    path, params = build.new_endpoint(param)
+    return parse_model(ResponseModel, self._get(path, params))
 ```
 
 ### Testing Patterns
@@ -126,9 +118,12 @@ async def test_async_method():
 elfa/
 ├── __init__.py          # Main package exports
 ├── client/              # Client implementations
-│   ├── elfa_client.py   # Sync client
-│   ├── async_client.py  # Async client
-│   └── ...
+│   ├── elfa_client.py   # Sync data + chat client (.auto/.trade)
+│   ├── async_client.py  # Async mirror
+│   ├── auto_client.py   # AutoClient / AsyncAutoClient
+│   ├── trade_client.py  # TradeClient / AsyncTradeClient
+│   ├── base.py          # SignedClient + parse helpers
+│   └── _params.py       # shared data param builders
 ├── models/              # Pydantic data models
 ├── exceptions/          # Custom exceptions
 └── utils/               # Utility functions
@@ -152,7 +147,7 @@ examples/                # Usage examples
 - `typing-extensions>=4.0.0` - Extended typing support
 
 ### Development Dependencies
-- `pytest` + `pytest-asyncio` + `pytest-httpx` - Testing framework
+- `pytest` + `pytest-asyncio` + `respx` - Testing framework
 - `black` + `isort` - Code formatting
 - `mypy` - Type checking
 - `flake8` - Linting
