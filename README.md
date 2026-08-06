@@ -4,14 +4,13 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Official Python SDK for the Elfa API v2 — social intelligence, AI chat, and the Auto/Trade engines for crypto. Sync and async clients, fully typed with Pydantic.
+Official Python SDK for the Elfa API v2 — social intelligence, AI chat, and the Auto condition engine for crypto. Sync and async clients, fully typed with Pydantic.
 
 ## Features
 
 - **Social intelligence** — trending tokens, mentions, narratives, smart stats, event summaries
-- **AI chat** — market analysis and conversational chat via `client.chat`
+- **AI chat** — market analysis and conversational chat via `client.chat`, streamed via `client.chat_stream`
 - **Auto condition engine** — build EQL queries that notify or trade via `client.auto`
-- **Direct trading** — place orders and manage positions via `client.trade`
 - **Sync and async** — `ElfaClient` and `AsyncElfaClient`, same surface
 - **Typed** — Pydantic v2 models, full type hints
 - **Robust** — retries with backoff, typed errors, HMAC request signing
@@ -68,7 +67,7 @@ client = ElfaClient(
     timeout=30.0,                    # per-request timeout, seconds
     retries=3,                       # retries for idempotent (GET) requests
     retry_delay=1.0,                 # base delay for exponential backoff
-    hmac_secret=None,                # required for Auto/Trade mutations (see below)
+    hmac_secret=None,                # required for Auto trade-action queries (see below)
     headers=None,                    # extra headers sent on every request
 )
 
@@ -76,14 +75,13 @@ client = ElfaClient(
 assert client.test_connection() is True
 ```
 
-The Auto and Trade engines are also constructable standalone if you only need one:
+The Auto engine is also constructable standalone if that is all you need:
 
 ```python
-from elfa import TradeClient
+from elfa import AutoClient
 
-trade = TradeClient(api_key="your-api-key", hmac_secret="your-hmac-secret")
-# ... use trade.place_order(...) etc.
-trade.close()
+auto = AutoClient(api_key="your-api-key", hmac_secret="your-hmac-secret")
+auto.close()
 ```
 
 The API key is sent as the `x-elfa-api-key` header on every request. Read it from the environment in your app:
@@ -113,8 +111,27 @@ All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 | `get_event_summary(keywords, ...)` | `/v2/data/event-summary` |
 | `get_trending_narratives(...)` | `/v2/data/trending-narratives` |
 | `chat(message, ...)` | `/v2/chat` |
+| `chat_stream(message, ...)` | `/v2/chat/stream` |
 
 Time-ranged endpoints accept either `time_window="24h"` or both `from_time` and `to_time` (unix seconds).
+
+### Streaming chat (SSE)
+
+`chat_stream` takes the same arguments as `chat` and yields one event per `data:` frame, ending on the terminating `[DONE]` frame. Requires a PAYG or Enterprise API key.
+
+```python
+for event in client.chat_stream("What is the sentiment on SOL?"):
+    if event.type == "text":
+        print(event.content, end="")
+    elif event.type == "complete":
+        print("\ncredits:", event.creditsConsumed)
+
+# async
+async for event in async_client.chat_stream("What is the sentiment on SOL?"):
+    print(event.type)
+```
+
+Event types are `session_info`, `title`, `text`, `text_complete`, `status`, `credits`, `complete`, `invalid_request` and `error`. Payload fields vary by type and are preserved as model extras.
 
 ## Auto condition engine (`client.auto`)
 
@@ -158,31 +175,9 @@ async for event in async_client.auto.stream_all():
     print(event.event, event.data)
 ```
 
-## Direct trading (`client.trade`)
-
-Trade a Privy-linked exchange account. All writes require an `hmac_secret`; previews do not execute and are free. **Sizes and prices are decimal strings.**
-
-```python
-client = ElfaClient(api_key="your-api-key", hmac_secret="your-hmac-secret")
-
-preview = client.trade.preview_order({
-    "exchange": "hyperliquid", "symbol": "BTC",
-    "side": "buy", "orderType": "market", "size": "0.001",
-})
-
-if preview.would_execute:
-    result = client.trade.place_order({
-        "exchange": "hyperliquid", "symbol": "BTC",
-        "side": "buy", "orderType": "market", "size": "0.001",
-    })
-    print(result.order_id, result.filled_size, result.avg_fill_price)
-```
-
-Methods: `preview_order`, `place_order`, `cancel_order`, `modify_order`, `preview_close_position`, `close_position`, `preview_set_position_tpsl`, `set_position_tpsl`.
-
 ## HMAC signing
 
-Auto trade-action queries and all `client.trade` writes are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://docs.elfa.ai).
+Auto trade-action queries are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://docs.elfa.ai).
 
 ## Error handling
 

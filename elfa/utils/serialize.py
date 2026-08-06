@@ -8,11 +8,11 @@ The server does not sign the bytes we sent — it re-serializes the body it pars
 with ``JSON.stringify``. So our output has to survive a JSON round-trip through
 JavaScript unchanged, and Python and JavaScript do not agree on how to render
 every float. The one that matters in practice is the *integral* float: Python
-writes ``50.0`` where ``JSON.stringify`` writes ``50``. Since the trade and EQL
-surfaces take percentages, leverage and price thresholds as numbers, a caller
-writing ``close_percent=50.0`` — or any value that came out of a ``/`` division —
-would otherwise sign bytes the server can never reproduce. ``_js_number``
-normalizes those back to ints before serializing.
+writes ``50.0`` where ``JSON.stringify`` writes ``50``. Since the EQL surface
+takes percentages, leverage and price thresholds as numbers, a caller writing
+``value=50.0`` — or any value that came out of a ``/`` division — would otherwise
+sign bytes the server can never reproduce. ``_js_number`` normalizes those back
+to ints before serializing.
 """
 
 import json

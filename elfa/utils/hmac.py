@@ -1,5 +1,5 @@
 """
-HMAC-SHA256 request signing for Auto/Trade mutations.
+HMAC-SHA256 request signing for Auto mutations.
 
 The server verifies the signature over ``timestamp + METHOD + mounted_path + body``,
 where ``body`` is the compact JSON string it re-serializes from the parsed request

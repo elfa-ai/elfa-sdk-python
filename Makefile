@@ -75,8 +75,8 @@ examples-async:
 	python examples/async_usage.py
 
 examples-auto:
-	@echo "Running auto + trade example:"
-	python examples/auto_and_trade.py
+	@echo "Running auto example:"
+	python examples/auto_usage.py
 
 # CI/CD simulation
 ci: install-dev lint type-check test-coverage

@@ -1,8 +1,8 @@
 """Gated live integration tests against a real Elfa API.
 
 Skipped unless ``ELFA_API_KEY`` is set. Optional env:
-``ELFA_BASE_URL``, ``ELFA_HMAC_SECRET``, ``ELFA_STAGING_SECRET``,
-and ``ELFA_TRADE_LINKED=1`` to exercise a trade preview on a linked account.
+``ELFA_BASE_URL``, ``ELFA_HMAC_SECRET``, ``ELFA_STAGING_SECRET``, and
+``ELFA_CHAT_STREAM=1`` to exercise chat streaming on a PAYG or Enterprise key.
 """
 
 import os
@@ -110,17 +110,10 @@ def test_auto_notification_lifecycle(client):
 
 
 @pytest.mark.skipif(
-    not os.environ.get("ELFA_TRADE_LINKED"),
-    reason="requires a Privy-linked exchange account (set ELFA_TRADE_LINKED=1)",
+    not os.environ.get("ELFA_CHAT_STREAM"),
+    reason="requires a PAYG or Enterprise key (set ELFA_CHAT_STREAM=1)",
 )
-def test_trade_preview_order(client):
-    result = client.trade.preview_order(
-        {
-            "exchange": "hyperliquid",
-            "symbol": "BTC",
-            "side": "buy",
-            "orderType": "market",
-            "size": "0.001",
-        }
-    )
-    assert result.success is True
+def test_chat_stream_yields_events(client):
+    events = [event.type for event in client.chat_stream("what is bitcoin")]
+    assert events
+    assert events[-1] == "complete"

@@ -28,9 +28,9 @@ See `AGENT.md` for complete architecture details. Key Claude Code considerations
 
 ### File Navigation Patterns
 When exploring the codebase, reference components by their file paths:
-- `elfa/client/elfa_client.py` - Sync `ElfaClient` (data + chat, `.auto`/`.trade`)
+- `elfa/client/elfa_client.py` - Sync `ElfaClient` (data + chat, `.auto`)
 - `elfa/client/async_client.py` - `AsyncElfaClient`
-- `elfa/client/auto_client.py` / `trade_client.py` - Auto/Trade engines
+- `elfa/client/auto_client.py` - Auto engine
 - `elfa/client/_params.py` - shared data param builders
 - `elfa/utils/{http,hmac,sse}.py` - transport, signing, SSE
 - `elfa/models/__init__.py` - All available Pydantic models
@@ -41,7 +41,7 @@ When exploring the codebase, reference components by their file paths:
 - Follow existing client method patterns for consistency
 - Go through the transport (`self._transport.request_json(...)`) and `parse_model(...)`
 - Add data param mapping to `elfa/client/_params.py`, not inline
-- For Auto/Trade mutations, sign via `SignedClient` and send compact bytes (`content=`)
+- For Auto mutations, sign via `SignedClient` and send compact bytes (`content=`)
 
 ### Testing Approach
 - Create both sync and async test variants for new client methods

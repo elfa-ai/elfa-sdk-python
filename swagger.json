@@ -122,6 +122,17 @@
 					"tier": {
 						"type": "string"
 					},
+					"depositCredits": {
+						"type": "number",
+						"format": "double"
+					},
+					"billingMode": {
+						"type": "string",
+						"enum": [
+							"deposit",
+							"arrears"
+						]
+					},
 					"usage": {
 						"properties": {
 							"monthly": {
@@ -193,6 +204,8 @@
 					"allowOverage",
 					"maxOverage",
 					"tier",
+					"depositCredits",
+					"billingMode",
 					"usage",
 					"limits",
 					"isExpired",
@@ -591,7 +604,7 @@
 							"total"
 						],
 						"type": "object",
-						"description": "Pagination metadata. `cursor` is a millisecond timestamp — pass it back as\nthe `cursor` query param to fetch the next page. Absent on the final page.\n`total` may be capped at 10000 for performance."
+						"description": "Pagination metadata. `cursor` is a millisecond timestamp — pass it back as\nthe `cursor` query param to fetch the next page. Omitted once `data` is\nempty, which is the signal to stop paging. `total` is the complete\nmatching result set, not the remainder after the cursor, and may be\ncapped at 10000 for performance."
 					}
 				},
 				"required": [
@@ -899,7 +912,7 @@
 				"properties": {
 					"message": {
 						"type": "string",
-						"description": "The user message. Only used when analysisType is \"chat\"; ignored for all other analysis types."
+						"description": "The user message. Required when analysisType is \"chat\"; ignored for all other analysis types."
 					},
 					"sessionId": {
 						"type": "string",
@@ -1427,6 +1440,83 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"ApiKeyAutoConditionValue": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number",
+						"format": "double"
+					},
+					{
+						"type": "boolean"
+					}
+				],
+				"nullable": true
+			},
+			"ApiKeyAutoConditionState": {
+				"properties": {
+					"index": {
+						"type": "number",
+						"format": "double",
+						"description": "Zero-based condition index from the flattened EQL condition tree"
+					},
+					"source": {
+						"type": "string",
+						"description": "Data source that produced the value"
+					},
+					"method": {
+						"type": "string",
+						"description": "Source method that was evaluated"
+					},
+					"args": {
+						"$ref": "#/components/schemas/JsonObject",
+						"description": "Public condition arguments with internal source identifiers removed"
+					},
+					"currentValue": {
+						"$ref": "#/components/schemas/ApiKeyAutoConditionValue",
+						"description": "Latest observed value at evaluation time"
+					},
+					"targetValue": {
+						"$ref": "#/components/schemas/ApiKeyAutoConditionValue",
+						"description": "Threshold or comparison value from the EQL condition"
+					},
+					"operator": {
+						"type": "string",
+						"description": "Comparison operator"
+					},
+					"isMet": {
+						"type": "boolean",
+						"description": "Whether this condition was met in the latest evaluation"
+					},
+					"lastUpdated": {
+						"type": "string",
+						"nullable": true,
+						"description": "ISO timestamp for the condition value"
+					},
+					"reason": {
+						"type": "string",
+						"description": "Optional evaluator explanation or error reason"
+					},
+					"conversationSessionId": {
+						"type": "string",
+						"nullable": true,
+						"description": "Linked LLM conversation session, when the condition used an LLM run"
+					},
+					"runId": {
+						"type": "string",
+						"nullable": true,
+						"description": "Linked Auto/LLM run id, when available"
+					},
+					"cacheHit": {
+						"type": "boolean",
+						"description": "Whether the condition value came from cache"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
 			"ApiKeyPollQueryLatestEvaluation": {
 				"properties": {
 					"evaluatedAt": {
@@ -1434,21 +1524,240 @@
 						"nullable": true,
 						"description": "ISO timestamp of the latest evaluation"
 					},
+					"conditionStates": {
+						"items": {
+							"$ref": "#/components/schemas/ApiKeyAutoConditionState"
+						},
+						"type": "array",
+						"description": "Per-condition values from the latest evaluation snapshot"
+					},
 					"wouldTriggerNow": {
 						"type": "boolean",
 						"nullable": true,
 						"description": "Whether the latest evaluation would trigger at that time"
+					},
+					"matchingConditions": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Number of conditions that matched in the latest evaluation"
+					},
+					"totalConditions": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Total number of conditions evaluated"
 					}
 				},
 				"required": [
 					"evaluatedAt",
-					"wouldTriggerNow"
+					"conditionStates",
+					"wouldTriggerNow",
+					"matchingConditions",
+					"totalConditions"
 				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyAutoExecutionDetails": {
+				"properties": {
+					"trade": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/JsonObject"
+							}
+						],
+						"nullable": true,
+						"description": "Trade action summary, when the execution placed or attempted an order"
+					},
+					"notification": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/JsonObject"
+							}
+						],
+						"nullable": true,
+						"description": "Notification/webhook/Telegram delivery summary, when applicable"
+					},
+					"llm": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/JsonObject"
+							}
+						],
+						"nullable": true,
+						"description": "LLM action summary, when applicable"
+					},
+					"auto": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/JsonObject"
+							}
+						],
+						"nullable": true,
+						"description": "Auto action summary, when applicable"
+					},
+					"script": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/JsonObject"
+							}
+						],
+						"nullable": true,
+						"description": "Script action summary, when applicable"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyAutoExecutionError": {
+				"properties": {
+					"code": {
+						"type": "string",
+						"nullable": true,
+						"description": "Stable error code"
+					},
+					"message": {
+						"type": "string",
+						"nullable": true,
+						"description": "Human-readable error message"
+					}
+				},
+				"type": "object",
+				"additionalProperties": {}
+			},
+			"ApiKeyAutoTriggerCondition": {
+				"properties": {
+					"source": {
+						"type": "string",
+						"description": "Data source that fired"
+					},
+					"method": {
+						"type": "string",
+						"description": "Source method that fired"
+					},
+					"args": {
+						"$ref": "#/components/schemas/JsonObject",
+						"description": "Public condition arguments with internal source identifiers removed"
+					},
+					"operator": {
+						"type": "string",
+						"description": "Comparison operator"
+					},
+					"value": {
+						"$ref": "#/components/schemas/ApiKeyAutoConditionValue",
+						"description": "Threshold or comparison value from the EQL condition"
+					}
+				},
+				"required": [
+					"source"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyAutoTriggerMatch": {
+				"properties": {
+					"observedValue": {
+						"$ref": "#/components/schemas/ApiKeyAutoConditionValue",
+						"description": "Numeric/string/boolean value observed when the trigger fired"
+					},
+					"url": {
+						"type": "string",
+						"description": "Public source URL for semantic tweet/news/Telegram matches, when available"
+					},
+					"mentionedAt": {
+						"type": "string",
+						"description": "Source event timestamp for semantic matches"
+					},
+					"confidence": {
+						"type": "number",
+						"format": "double",
+						"description": "Semantic match confidence, when available"
+					},
+					"accountHandle": {
+						"type": "string",
+						"description": "Public account handle for news/tweet matches, when available"
+					},
+					"chatUsername": {
+						"type": "string",
+						"description": "Public Telegram chat username, when available"
+					},
+					"chatTitle": {
+						"type": "string",
+						"description": "Public Telegram chat title, when available"
+					},
+					"messageId": {
+						"type": "string",
+						"description": "Public Telegram message id, when available"
+					},
+					"messageIds": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Public Telegram grouped message ids, when available"
+					},
+					"groupId": {
+						"type": "string",
+						"description": "Public Telegram group id, when available"
+					}
+				},
+				"type": "object",
+				"additionalProperties": {}
+			},
+			"ApiKeyAutoMatchedCondition": {
+				"properties": {
+					"condition": {
+						"$ref": "#/components/schemas/ApiKeyAutoTriggerCondition",
+						"description": "Public condition definition that matched"
+					},
+					"match": {
+						"$ref": "#/components/schemas/ApiKeyAutoTriggerMatch",
+						"description": "Public match details, including observedValue for numeric conditions"
+					}
+				},
+				"required": [
+					"condition"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyAutoTriggerPayload": {
+				"properties": {
+					"type": {
+						"type": "string",
+						"description": "Trigger category, e.g. price, poll, cron, or event"
+					},
+					"time": {
+						"type": "string",
+						"description": "ISO timestamp when the trigger fired"
+					},
+					"matchedConditions": {
+						"items": {
+							"$ref": "#/components/schemas/ApiKeyAutoMatchedCondition"
+						},
+						"type": "array",
+						"description": "Conditions that were met when the trigger fired"
+					}
+				},
 				"type": "object",
 				"additionalProperties": false
 			},
 			"ApiKeyPollQueryExecution": {
 				"properties": {
+					"triggerTime": {
+						"type": "string",
+						"description": "ISO timestamp when the Auto query fired"
+					},
+					"conditionsMet": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of conditions met when the Auto query fired"
+					},
+					"trigger": {
+						"$ref": "#/components/schemas/ApiKeyAutoTriggerPayload",
+						"description": "Canonical public trigger context for why the query fired"
+					},
 					"id": {
 						"type": "string",
 						"description": "Execution identifier"
@@ -1465,11 +1774,21 @@
 						"type": "string",
 						"description": "Execution status"
 					},
+					"details": {
+						"$ref": "#/components/schemas/ApiKeyAutoExecutionDetails",
+						"description": "Public execution details summary"
+					},
 					"createdAt": {
 						"type": "string",
 						"description": "Execution creation timestamp"
 					},
 					"error": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/ApiKeyAutoExecutionError"
+							}
+						],
+						"nullable": true,
 						"description": "Optional execution error object from Athena (when present)"
 					}
 				},
@@ -1642,15 +1961,145 @@
 				"type": "object",
 				"additionalProperties": {}
 			},
-			"ApiKeyListExecutionsResponse": {
-				"properties": {},
+			"ApiKeyAutoExecution": {
+				"properties": {
+					"triggerTime": {
+						"type": "string",
+						"description": "ISO timestamp when the Auto query fired"
+					},
+					"conditionsMet": {
+						"type": "number",
+						"format": "double",
+						"description": "Number of conditions met when the Auto query fired"
+					},
+					"trigger": {
+						"$ref": "#/components/schemas/ApiKeyAutoTriggerPayload",
+						"description": "Canonical public trigger context for why the query fired"
+					},
+					"id": {
+						"type": "string",
+						"description": "Execution identifier"
+					},
+					"queryId": {
+						"type": "string",
+						"description": "Query identifier"
+					},
+					"type": {
+						"type": "string",
+						"description": "Execution type"
+					},
+					"status": {
+						"type": "string",
+						"description": "Execution status"
+					},
+					"details": {
+						"$ref": "#/components/schemas/ApiKeyAutoExecutionDetails",
+						"description": "Public execution details summary"
+					},
+					"error": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/ApiKeyAutoExecutionError"
+							}
+						],
+						"nullable": true,
+						"description": "Optional execution error object from Athena (when present)"
+					},
+					"createdAt": {
+						"type": "string",
+						"description": "Execution creation timestamp"
+					},
+					"auditDetails": {
+						"$ref": "#/components/schemas/JsonObject",
+						"description": "Full Athena audit details; returned by the single-execution endpoint"
+					},
+					"actionSnapshot": {
+						"$ref": "#/components/schemas/JsonObject",
+						"description": "Action configuration snapshot; returned by the single-execution endpoint"
+					},
+					"executionContext": {
+						"$ref": "#/components/schemas/JsonObject",
+						"description": "Execution context with user identity stripped"
+					},
+					"externalEvents": {
+						"items": {
+							"$ref": "#/components/schemas/JsonObject"
+						},
+						"type": "array",
+						"description": "External event records linked to the execution"
+					},
+					"notificationOutbox": {
+						"items": {
+							"$ref": "#/components/schemas/JsonObject"
+						},
+						"type": "array",
+						"description": "Sanitized notification outbox delivery metadata linked to the execution"
+					},
+					"schemaVersion": {
+						"type": "number",
+						"format": "double",
+						"description": "Execution schema version"
+					},
+					"updatedAt": {
+						"type": "string",
+						"description": "Last update timestamp"
+					},
+					"finishedAt": {
+						"type": "string",
+						"nullable": true,
+						"description": "Completion timestamp, if finished"
+					}
+				},
 				"type": "object",
-				"additionalProperties": {}
+				"additionalProperties": false
+			},
+			"ApiKeyAutoPagination": {
+				"properties": {
+					"total": {
+						"type": "number",
+						"format": "double",
+						"description": "Total matching records"
+					},
+					"limit": {
+						"type": "number",
+						"format": "double",
+						"description": "Page size"
+					},
+					"offset": {
+						"type": "number",
+						"format": "double",
+						"description": "Offset used for the page"
+					},
+					"hasMore": {
+						"type": "boolean",
+						"description": "Whether another page exists"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ApiKeyListExecutionsResponse": {
+				"properties": {
+					"data": {
+						"items": {
+							"$ref": "#/components/schemas/ApiKeyAutoExecution"
+						},
+						"type": "array",
+						"description": "Execution records"
+					},
+					"pagination": {
+						"$ref": "#/components/schemas/ApiKeyAutoPagination",
+						"description": "Pagination metadata"
+					}
+				},
+				"required": [
+					"data"
+				],
+				"type": "object",
+				"additionalProperties": false
 			},
 			"ApiKeyGetExecutionResponse": {
-				"properties": {},
-				"type": "object",
-				"additionalProperties": {}
+				"$ref": "#/components/schemas/ApiKeyAutoExecution"
 			},
 			"MercuryExchange": {
 				"type": "string",
@@ -1910,342 +2359,11 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"ApiKeyTradeErrorDetail": {
-				"description": "Structured error returned by the trade service for a failed/rejected action.",
-				"properties": {
-					"code": {
-						"type": "string",
-						"description": "Machine-readable error code (e.g. `INSUFFICIENT_MARGIN`, `TRADE_SERVICE_UNAVAILABLE`)."
-					},
-					"message": {
-						"type": "string",
-						"description": "Human-readable error message."
-					}
-				},
-				"required": [
-					"code",
-					"message"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyTradeResultResponse": {
-				"description": "Result of an executed order/position action (mirrors the trade service's response).",
-				"properties": {
-					"success": {
-						"type": "boolean",
-						"description": "`true` when the venue accepted the action."
-					},
-					"orderId": {
-						"type": "string",
-						"description": "Venue order id, when an order was created."
-					},
-					"filledSize": {
-						"type": "string",
-						"description": "Filled size (decimal string), when applicable."
-					},
-					"avgFillPrice": {
-						"type": "string",
-						"description": "Average fill price (decimal string), when applicable."
-					},
-					"error": {
-						"$ref": "#/components/schemas/ApiKeyTradeErrorDetail",
-						"description": "Present when `success` is `false`."
-					}
-				},
-				"required": [
-					"success"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyTradeErrorResponse": {
-				"description": "Error envelope for failed trade requests. Order-level rejections return `422`\nand transport failures return `502` (e.g. `TRADE_SERVICE_UNAVAILABLE`);\nboth carry `success: false` so a failed fill is never billed.",
-				"properties": {
-					"success": {
-						"type": "boolean"
-					},
-					"error": {
-						"$ref": "#/components/schemas/ApiKeyTradeErrorDetail"
-					}
-				},
-				"required": [
-					"success",
-					"error"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyTradeExchange": {
-				"type": "string",
-				"enum": [
-					"hyperliquid",
-					"gmx"
-				],
-				"description": "Venues available to the direct-trade API (agent-wallet / Privy-signed)."
-			},
-			"ApiKeyPlaceOrderRequestBody": {
-				"description": "Market/limit order placement — `POST /v2/trade/orders` (+ `/preview`).",
-				"properties": {
-					"exchange": {
-						"$ref": "#/components/schemas/ApiKeyTradeExchange"
-					},
-					"symbol": {
-						"type": "string",
-						"description": "Venue symbol, e.g. `BTC`.",
-						"example": "BTC"
-					},
-					"side": {
-						"type": "string",
-						"enum": [
-							"buy",
-							"sell"
-						]
-					},
-					"orderType": {
-						"type": "string",
-						"enum": [
-							"market",
-							"limit"
-						],
-						"description": "`market` fills immediately; `limit` rests at `price`."
-					},
-					"size": {
-						"type": "string",
-						"description": "Order size in base units (decimal string).",
-						"example": "0.1"
-					},
-					"amount": {
-						"type": "string",
-						"description": "Order size in quote/USD terms (decimal string).",
-						"example": "2500"
-					},
-					"positionSizePercent": {
-						"type": "number",
-						"format": "double",
-						"description": "Size as a percentage of available balance (0–100).",
-						"example": 25
-					},
-					"price": {
-						"type": "string",
-						"description": "Limit price (decimal string); required for `limit` orders.",
-						"example": "65000"
-					},
-					"leverage": {
-						"type": "number",
-						"format": "double",
-						"description": "Leverage multiplier.",
-						"example": 5
-					},
-					"marginType": {
-						"type": "string",
-						"enum": [
-							"cross",
-							"isolated"
-						]
-					},
-					"tp": {
-						"type": "string",
-						"description": "Attached take-profit trigger price (decimal string).",
-						"example": "72000"
-					},
-					"sl": {
-						"type": "string",
-						"description": "Attached stop-loss trigger price (decimal string).",
-						"example": "60000"
-					},
-					"reduceOnly": {
-						"type": "boolean",
-						"description": "Only reduce an existing position; never open/increase."
-					}
-				},
-				"required": [
-					"exchange",
-					"symbol",
-					"side",
-					"orderType"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyTradePreviewResponse": {
-				"description": "Result of a preview (dry-run) — no order is placed.",
-				"properties": {
-					"success": {
-						"type": "boolean",
-						"description": "`true` when the preview ran successfully."
-					},
-					"wouldExecute": {
-						"type": "boolean",
-						"description": "Whether the order would execute as specified."
-					},
-					"error": {
-						"$ref": "#/components/schemas/ApiKeyTradeErrorDetail",
-						"description": "Present when `success` is `false`."
-					}
-				},
-				"required": [
-					"success",
-					"wouldExecute"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyCancelOrderRequestBody": {
-				"description": "Cancel a resting order — `POST /v2/trade/orders/cancel`.",
-				"properties": {
-					"exchange": {
-						"$ref": "#/components/schemas/ApiKeyTradeExchange"
-					},
-					"symbol": {
-						"type": "string",
-						"example": "BTC"
-					},
-					"orderId": {
-						"type": "string",
-						"description": "Venue order id to cancel.",
-						"example": "123456789"
-					}
-				},
-				"required": [
-					"exchange",
-					"symbol",
-					"orderId"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyModifyOrderRequestBody": {
-				"description": "Modify a resting order — `POST /v2/trade/orders/modify`.",
-				"properties": {
-					"exchange": {
-						"$ref": "#/components/schemas/ApiKeyTradeExchange"
-					},
-					"symbol": {
-						"type": "string",
-						"example": "BTC"
-					},
-					"orderId": {
-						"type": "string",
-						"description": "Venue order id to modify.",
-						"example": "123456789"
-					},
-					"size": {
-						"type": "string",
-						"description": "New size (decimal string).",
-						"example": "0.2"
-					},
-					"price": {
-						"type": "string",
-						"description": "New limit price (decimal string).",
-						"example": "64000"
-					},
-					"triggerPrice": {
-						"type": "string",
-						"description": "New trigger price for stop/trigger orders (decimal string).",
-						"example": "60000"
-					}
-				},
-				"required": [
-					"exchange",
-					"symbol",
-					"orderId"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyClosePositionRequestBody": {
-				"description": "Close an open position — `POST /v2/trade/positions/close` (+ `/preview`).",
-				"properties": {
-					"exchange": {
-						"$ref": "#/components/schemas/ApiKeyTradeExchange"
-					},
-					"symbol": {
-						"type": "string",
-						"example": "BTC"
-					},
-					"orderType": {
-						"type": "string",
-						"enum": [
-							"market",
-							"limit"
-						],
-						"description": "Order type used to close."
-					},
-					"size": {
-						"type": "string",
-						"description": "Base-unit size to close (decimal string).",
-						"example": "0.1"
-					},
-					"amount": {
-						"type": "string",
-						"description": "Quote/USD size to close (decimal string).",
-						"example": "2500"
-					},
-					"positionSizePercent": {
-						"type": "number",
-						"format": "double",
-						"description": "Close size as a percentage of position size (0–100).",
-						"example": 50
-					},
-					"closePercent": {
-						"type": "number",
-						"format": "double",
-						"description": "Percentage of the position to close (0–100).",
-						"example": 100
-					},
-					"price": {
-						"type": "string",
-						"description": "Limit price for a `limit` close (decimal string).",
-						"example": "65000"
-					}
-				},
-				"required": [
-					"exchange",
-					"symbol",
-					"orderType"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeySetPositionTpslRequestBody": {
-				"description": "Set take-profit / stop-loss on a position — `POST /v2/trade/positions/tpsl` (+ `/preview`).",
-				"properties": {
-					"exchange": {
-						"$ref": "#/components/schemas/ApiKeyTradeExchange"
-					},
-					"symbol": {
-						"type": "string",
-						"example": "BTC"
-					},
-					"tp": {
-						"type": "string",
-						"description": "Take-profit trigger price (decimal string).",
-						"example": "72000"
-					},
-					"sl": {
-						"type": "string",
-						"description": "Stop-loss trigger price (decimal string).",
-						"example": "60000"
-					},
-					"size": {
-						"type": "string",
-						"description": "Size the TP/SL applies to (decimal string); defaults to full position.",
-						"example": "0.1"
-					}
-				},
-				"required": [
-					"exchange",
-					"symbol"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"Pick_ChatRequestBodyV2.Exclude_keyofChatRequestBodyV2.speed__": {
 				"properties": {
 					"message": {
 						"type": "string",
-						"description": "The user message. Only used when analysisType is \"chat\"; ignored for all other analysis types."
+						"description": "The user message. Required when analysisType is \"chat\"; ignored for all other analysis types."
 					},
 					"sessionId": {
 						"type": "string",
@@ -2455,7 +2573,31 @@
 							"expert",
 							"fast"
 						],
-						"type": "object"
+						"type": "object",
+						"description": "All credit-consuming action fires (`llm` + `auto`) by speed."
+					},
+					"autoActionCallsBySpeed": {
+						"properties": {
+							"adaptive": {
+								"type": "number",
+								"format": "double"
+							},
+							"expert": {
+								"type": "number",
+								"format": "double"
+							},
+							"fast": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"adaptive",
+							"expert",
+							"fast"
+						],
+						"type": "object",
+						"description": "Subset of `actionCallsBySpeed` that are top-level `auto` fires.\nPriced at Auto agent rates (full builder session), not single LLM-call rates."
 					}
 				},
 				"required": [
@@ -2640,54 +2782,43 @@
 						"nullable": true,
 						"description": "ISO timestamp of the latest evaluation"
 					},
+					"conditionStates": {
+						"items": {
+							"$ref": "#/components/schemas/ApiKeyAutoConditionState"
+						},
+						"type": "array",
+						"description": "Per-condition values from the latest evaluation snapshot"
+					},
 					"wouldTriggerNow": {
 						"type": "boolean",
 						"nullable": true,
 						"description": "Whether the latest evaluation would trigger at that time"
+					},
+					"matchingConditions": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Number of conditions that matched in the latest evaluation"
+					},
+					"totalConditions": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Total number of conditions evaluated"
 					}
 				},
 				"required": [
 					"evaluatedAt",
-					"wouldTriggerNow"
+					"conditionStates",
+					"wouldTriggerNow",
+					"matchingConditions",
+					"totalConditions"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
 			"PollQueryExecution": {
-				"properties": {
-					"id": {
-						"type": "string",
-						"description": "Execution identifier"
-					},
-					"queryId": {
-						"type": "string",
-						"description": "Query identifier"
-					},
-					"type": {
-						"type": "string",
-						"description": "Execution type"
-					},
-					"status": {
-						"type": "string",
-						"description": "Execution status"
-					},
-					"createdAt": {
-						"type": "string",
-						"description": "Execution creation timestamp"
-					},
-					"error": {
-						"description": "Optional execution error object from Athena (when present)"
-					}
-				},
-				"required": [
-					"id",
-					"queryId",
-					"type",
-					"status",
-					"createdAt"
-				],
-				"type": "object",
-				"additionalProperties": false
+				"$ref": "#/components/schemas/ApiKeyPollQueryExecution"
 			},
 			"PollQueryResponse": {
 				"properties": {
@@ -2956,6 +3087,8 @@
 												"allowOverage": true,
 												"maxOverage": 1,
 												"tier": "string",
+												"depositCredits": 1,
+												"billingMode": "deposit",
 												"usage": {
 													"monthly": 1,
 													"daily": 1
@@ -3348,7 +3481,7 @@
 						"description": "Unauthorized"
 					}
 				},
-				"description": "Search mentions by keywords OR account name within a time period. Either\n`keywords` or `accountName` (or both) must be provided.\n\n**Response shape.** The response envelope is `{ success, data, metadata }`.\n`data` is a flat array of mentions; pagination state lives in `metadata`.\n\n**Cursor pagination.** Unlike `/v2/data/top-mentions` (which uses\n`page`/`pageSize`), this endpoint is cursor-paginated.\n`metadata.cursor` is a millisecond timestamp (number). To fetch the next\npage, pass its value back as the `cursor` query param.\n`metadata.cursor` is absent on the final page. `metadata.total` may be\ncapped at 10000 for performance.\n\n**No tweet content.** V2 does not return raw tweet text. Use the `link`\nfield to fetch the original tweet via the Twitter/X API if needed, or use\nthe SDK's `fetchRawTweets: true` option with a Twitter bearer token.\n\n**Account info.** Each mention includes a minimal `account` object with\nonly `username` and `isVerified`. No id, display name, follower count, or\nbio is returned.\n\n**Field notes.** `mentionedAt` is an ISO 8601 string (not a unix\ntimestamp). `repostBreakdown.smart` counts reposts by smart accounts;\n`repostBreakdown.ct` counts reposts by crypto-Twitter accounts.",
+				"description": "Search mentions by keywords OR account name within a time period. Either\n`keywords` or `accountName` (or both) must be provided.\n\n**Response shape.** The response envelope is `{ success, data, metadata }`.\n`data` is a flat array of mentions; pagination state lives in `metadata`.\n\n**Cursor pagination.** Unlike `/v2/data/top-mentions` (which uses\n`page`/`pageSize`), this endpoint is cursor-paginated.\n`metadata.cursor` is a millisecond timestamp (number). To fetch the next\npage, pass its value back as the `cursor` query param. Page until `data`\nis empty; `metadata.cursor` is only omitted on that empty page.\n`metadata.total` is the complete matching result set, not the remainder\nafter the cursor, and may be capped at 10000 for performance.\n\n**No tweet content.** V2 does not return raw tweet text. Use the `link`\nfield to fetch the original tweet via the Twitter/X API if needed, or use\nthe SDK's `fetchRawTweets: true` option with a Twitter bearer token.\n\n**Account info.** Each mention includes a minimal `account` object with\nonly `username` and `isVerified`. No id, display name, follower count, or\nbio is returned.\n\n**Field notes.** `mentionedAt` is an ISO 8601 string (not a unix\ntimestamp). `repostBreakdown.smart` counts reposts by smart accounts;\n`repostBreakdown.ct` counts reposts by crypto-Twitter accounts.",
 				"summary": "Multi keyword mentions search",
 				"tags": [
 					"v2 Data"
@@ -4035,7 +4168,7 @@
 						"description": "Unauthorized"
 					}
 				},
-				"description": "Send a message to the Elfa AI and receive a complete response.\nSuited for agents and integrations that do not support server-sent events (SSE).\n\n**Session management:** omit `sessionId` to start a new conversation.\nThe response includes a `sessionId` — pass it in subsequent requests to continue the same conversation.\n\n**Analysis types and required fields:**\n- `chat` (default) — general conversation. Requires `message`.\n- `macro` — macro market overview. `message` is optional.\n- `summary` — quick market summary. `message` is optional.\n- `tokenIntro` — token introduction. Requires `assetMetadata` with `symbol`, or `chain` + `contractAddress`.\n- `tokenAnalysis` — token trade setup analysis. Same `assetMetadata` requirements as `tokenIntro`.\n- `accountAnalysis` — Twitter/X account analysis. Requires `assetMetadata.username`.\n\n**`assetMetadata` fields (when applicable):**\n- `symbol` — token ticker symbol (e.g. `\"BTC\"`, `\"$ETH\"`)\n- `chain` — blockchain name (e.g. `\"ethereum\"`, `\"solana\"`)\n- `contractAddress` — token contract address\n- `username` — Twitter/X username for account analysis",
+				"description": "Send a message to the Elfa AI and receive a complete response.\nSuited for agents and integrations that do not support server-sent events (SSE).\n\n**Session management:** omit `sessionId` to start a new conversation.\nThe response includes a `sessionId` — pass it in subsequent requests to continue the same conversation.\n\n**Analysis types and required fields:**\n- `chat` (default) — general conversation. Requires `message`.\n- `macro` — macro market overview. No `message` needed.\n- `summary` — quick market summary. No `message` needed.\n- `tokenIntro` — token introduction. Requires `assetMetadata` with `symbol`, or `chain` + `contractAddress`.\n- `tokenAnalysis` — token trade setup analysis. Same `assetMetadata` requirements as `tokenIntro`.\n- `accountAnalysis` — Twitter/X account analysis. Requires `assetMetadata.username`.\n\n`message` is only used for `analysisType: \"chat\"` and is ignored for other\nanalysis types.\n\n**`assetMetadata` fields (when applicable):**\n- `symbol` — token ticker symbol (e.g. `\"BTC\"`, `\"$ETH\"`)\n- `chain` — blockchain name (e.g. `\"ethereum\"`, `\"solana\"`)\n- `contractAddress` — token contract address\n- `username` — Twitter/X username for account analysis",
 				"summary": "AI chat",
 				"tags": [
 					"v2 Chat"
@@ -4057,7 +4190,57 @@
 								"default": {
 									"summary": "Example request",
 									"value": {
-										"message": "Summarize BTC sentiment in the last 24h.",
+										"message": "Why is BTC moving today?",
+										"analysisType": "chat",
+										"speed": "expert"
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/v2/chat/stream": {
+			"post": {
+				"operationId": "chat-stream-v2",
+				"responses": {
+					"200": {
+						"description": "SSE stream established (text/event-stream)"
+					},
+					"400": {
+						"description": "Invalid request"
+					},
+					"401": {
+						"description": "Unauthorized"
+					},
+					"403": {
+						"description": "PAYG or Enterprise plan required"
+					}
+				},
+				"description": "Stream a response from Elfa AI using Server-Sent Events (SSE).\n\nUse this when your client can consume incremental events. Use\n`POST /v2/chat` instead when your integration needs a complete JSON\nresponse.\n\n**Access:** PAYG and Enterprise API keys.\n\n**Response format:** `text/event-stream`.\n\nCommon `data:` event payloads include:\n- `session_info` with `sessionId` and `analysisType`\n- `title` with a generated session or analysis title\n- `text` with incremental Markdown content\n- `text_complete` when incremental text has finished\n- `status` with progress updates\n- `credits` with consumed credits\n- `complete` with final `sessionId`, `success`, and `creditsConsumed`\n- `invalid_request` when a query is rejected by safety checks\n- `error` for stream failures\n\nA `: keep-alive` comment may be sent during long gaps. The stream ends\nwith `data: [DONE]`.\n\nRequest-body semantics match `POST /v2/chat`: `message` is required only\nfor `analysisType: \"chat\"`; token and account modes use `assetMetadata`.",
+				"summary": "AI chat stream",
+				"tags": [
+					"v2 Chat"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ChatRequestBodyV2"
+							},
+							"examples": {
+								"default": {
+									"summary": "Example request",
+									"value": {
+										"message": "Why is BTC moving today?",
 										"analysisType": "chat",
 										"speed": "expert"
 									}
@@ -4309,7 +4492,7 @@
 						}
 					}
 				},
-				"description": "Validate EQL syntax and get a cost estimate without creating a query.\nReturns simulation-based cost details when the query is valid.\n\n### Required Sequence (Enforced)\n\n`POST /v2/auto/queries/validate` must be called before\n`POST /v2/auto/queries`.\n\nLifecycle sequencing after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is\n   `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only after status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nHMAC signing is not required for validate.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k so I can review the breakout setup.\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"valid\": true,\n  \"errors\": [],\n  \"warnings\": [],\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": { \"fast\": 1, \"expert\": 0, \"adaptive\": 0 },\n    \"actionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 }\n  },\n  \"estimatedCost\": {\n    \"credits\": 30,\n    \"price\": \"$0.270\"\n  }\n}\n```\n\n> Best practice: always validate before create to catch schema issues and\n> preview estimated cost.",
+				"description": "Validate EQL syntax and get a cost estimate without creating a query.\nReturns simulation-based cost details when the query is valid.\n\n### Required Sequence (Enforced)\n\n`POST /v2/auto/queries/validate` must be called before\n`POST /v2/auto/queries`.\n\nLifecycle sequencing after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is\n   `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only after status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nHMAC signing is not required for validate.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k so I can review the breakout setup.\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"valid\": true,\n  \"errors\": [],\n  \"warnings\": [],\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": { \"fast\": 1, \"expert\": 0, \"adaptive\": 0 },\n    \"actionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 },\n    \"autoActionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 }\n  },\n  \"estimatedCost\": {\n    \"credits\": 30,\n    \"price\": \"$0.270\"\n  }\n}\n```\n\n> Best practice: always validate before create to catch schema issues and\n> preview estimated cost.",
 				"summary": "Validate Query",
 				"tags": [
 					"v2 Auto"
@@ -4457,7 +4640,7 @@
 						}
 					}
 				},
-				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nFor trade actions (`market_order`, `limit_order`), preflight\n`GET /v2/auto/exchanges` before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`, `market_order`, `limit_order`.\n\nTrade actions (`market_order`, `limit_order`) require an active exchange\nconnection for the linked user (for example Hyperliquid via\n`POST /v2/auto/exchanges`). Without a connected exchange, query creation\ncan succeed but order execution fails when the trigger fires.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.045`)\n- fast call: `+5 credits` (`+$0.045`)\n- expert call: `+18 credits` (`+$0.162`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` whose\n`params.callback.action.type` is `market_order` or `limit_order`). HMAC is\nNOT required for notification-only actions (`notify`, `telegram_bot`,\n`webhook`, or `llm` with a notification callback). Unknown action types\ndefault to requiring HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
+				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nFor trade actions (`market_order`, `limit_order`), preflight\n`GET /v2/auto/exchanges` before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`, `market_order`, `limit_order`.\n\nTrade actions (`market_order`, `limit_order`) require an active exchange\nconnection for the linked user (for example Hyperliquid via\n`POST /v2/auto/exchanges`). Without a connected exchange, query creation\ncan succeed but order execution fails when the trigger fires.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.045`)\n- fast call: `+5 credits` (`+$0.045`)\n- expert call: `+18 credits` (`+$0.162`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` whose\n`params.callback.action.type` is `market_order` or `limit_order`). HMAC is\nNOT required for notification-only actions (`notify`, `telegram_bot`,\n`webhook`, or `llm` with a notification callback). Unknown action types\ndefault to requiring HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
 				"summary": "Create Query",
 				"tags": [
 					"v2 Auto"
@@ -4612,7 +4795,16 @@
 											"status": "string",
 											"latestEvaluation": {
 												"evaluatedAt": "string",
-												"wouldTriggerNow": true
+												"conditionStates": [
+													{
+														"index": 1,
+														"source": "string",
+														"method": "string"
+													}
+												],
+												"wouldTriggerNow": true,
+												"matchingConditions": 1,
+												"totalConditions": 1
 											},
 											"executions": [
 												{
@@ -4650,7 +4842,7 @@
 						}
 					}
 				},
-				"description": "Check query status and execution results.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"queryId\": \"76e2e824-fc47-4d60-99b1-c227fbd2d3f5\",\n  \"status\": \"active\",\n  \"credits\": 0,\n  \"latestEvaluation\": {\n    \"evaluatedAt\": \"2026-04-01T12:00:00.000Z\",\n    \"wouldTriggerNow\": false\n  },\n  \"executions\": [\n    {\n      \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n      \"queryId\": \"76e2e824-fc47-4d60-99b1-c227fbd2d3f5\",\n      \"type\": \"llm\",\n      \"status\": \"failed\",\n      \"error\": {\n        \"code\": \"LLM_ACTION_UPSTREAM_ERROR\",\n        \"message\": \"Failed to execute llm action\"\n      },\n      \"createdAt\": \"2026-04-01T12:00:01.000Z\"\n    }\n  ]\n}\n```\n\n> Best practice: use polling for debugging or backfills. For production\n> delivery, prefer webhook/SSE notifications.",
+				"description": "Check query status and execution results.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"queryId\": \"76e2e824-fc47-4d60-99b1-c227fbd2d3f5\",\n  \"status\": \"active\",\n  \"credits\": 0,\n  \"latestEvaluation\": {\n    \"evaluatedAt\": \"2026-04-01T12:00:00.000Z\",\n    \"conditionStates\": [\n      {\n        \"index\": 0,\n        \"source\": \"price\",\n        \"method\": \"current\",\n        \"args\": { \"symbol\": \"BTC\" },\n        \"currentValue\": 97250.5,\n        \"targetValue\": 100000,\n        \"operator\": \"<\",\n        \"isMet\": true,\n        \"lastUpdated\": \"2026-04-01T12:00:00.000Z\"\n      }\n    ],\n    \"wouldTriggerNow\": true,\n    \"matchingConditions\": 1,\n    \"totalConditions\": 1\n  },\n  \"executions\": [\n    {\n      \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n      \"queryId\": \"76e2e824-fc47-4d60-99b1-c227fbd2d3f5\",\n      \"type\": \"notification\",\n      \"status\": \"success\",\n      \"details\": { \"notification\": { \"channel\": \"webhook\" } },\n      \"triggerTime\": \"2026-04-01T12:00:00.000Z\",\n      \"conditionsMet\": 1,\n      \"trigger\": {\n        \"type\": \"price\",\n        \"time\": \"2026-04-01T12:00:00.000Z\",\n        \"matchedConditions\": [\n          {\n            \"condition\": {\n              \"source\": \"price\",\n              \"method\": \"current\",\n              \"args\": { \"symbol\": \"BTC\" },\n              \"operator\": \"<\",\n              \"value\": 100000\n            },\n            \"match\": { \"observedValue\": 97250.5 }\n          }\n        ]\n      },\n      \"createdAt\": \"2026-04-01T12:00:01.000Z\"\n    }\n  ]\n}\n```\n\n`latestEvaluation` is the latest current-state snapshot. Auto Trigger\nContext (`triggerTime`, `conditionsMet`, `trigger`) explains what fired for\nan execution and uses the same public redaction boundary as outbound\ndelivery payloads.\n\n> Best practice: use polling for debugging or backfills. For production\n> delivery, prefer webhook/SSE notifications.",
 				"summary": "Poll Query",
 				"tags": [
 					"v2 Auto"
@@ -5565,7 +5757,21 @@
 									"success": {
 										"summary": "Example successful response",
 										"value": {
-											"key": {}
+											"data": [
+												{
+													"triggerTime": "string",
+													"conditionsMet": 1,
+													"trigger": {
+														"type": "string",
+														"time": "string",
+														"matchedConditions": [
+															{
+																"condition": null
+															}
+														]
+													}
+												}
+											]
 										}
 									}
 								}
@@ -5654,7 +5860,19 @@
 									"success": {
 										"summary": "Example successful response",
 										"value": {
-											"key": {}
+											"triggerTime": "string",
+											"conditionsMet": 1,
+											"trigger": {
+												"type": "string",
+												"time": "string",
+												"matchedConditions": [
+													{
+														"condition": {
+															"source": "string"
+														}
+													}
+												]
+											}
 										}
 									}
 								}
@@ -5933,827 +6151,6 @@
 				]
 			}
 		},
-		"/v2/trade/orders": {
-			"post": {
-				"operationId": "trade-place-order-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeResultResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Order rejected by the venue",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Place a market or limit order on a perp venue for your linked account.\n\nExecutes synchronously and returns the fill.\n\n### Cost\n`1` credit per executed order.\n\n### Auth\n`x-elfa-api-key` + **HMAC** (`x-elfa-timestamp`, `x-elfa-signature`).\n\n### Request Example\n```json\n{ \"exchange\": \"hyperliquid\", \"symbol\": \"BTC\", \"side\": \"buy\", \"orderType\": \"market\", \"size\": \"0.1\" }\n```",
-				"summary": "Place Order",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyPlaceOrderRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC",
-										"side": "buy",
-										"orderType": "market"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/orders/preview": {
-			"post": {
-				"operationId": "trade-preview-order-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradePreviewResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true,
-											"wouldExecute": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid API key",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Preview (dry-run) a market or limit order without placing it.\n\n### Cost\nFree.\n\n### Auth\n`x-elfa-api-key` (no HMAC).",
-				"summary": "Preview Order",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyPlaceOrderRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC",
-										"side": "buy",
-										"orderType": "market"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/orders/cancel": {
-			"post": {
-				"operationId": "trade-cancel-order-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeResultResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Cancel rejected by the venue",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Cancel a resting order.\n\n### Cost\nFree.\n\n### Auth\n`x-elfa-api-key` + **HMAC** (`x-elfa-timestamp`, `x-elfa-signature`).",
-				"summary": "Cancel Order",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyCancelOrderRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC",
-										"orderId": "123456789"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/orders/modify": {
-			"post": {
-				"operationId": "trade-modify-order-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeResultResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Modify rejected by the venue",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Modify a resting order (size, price, or trigger price).\n\n### Cost\nFree.\n\n### Auth\n`x-elfa-api-key` + **HMAC** (`x-elfa-timestamp`, `x-elfa-signature`).",
-				"summary": "Modify Order",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyModifyOrderRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC",
-										"orderId": "123456789"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/positions/close": {
-			"post": {
-				"operationId": "trade-close-position-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeResultResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "Close rejected by the venue",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Close an open position (fully or partially).\n\n### Cost\n`1` credit per executed close.\n\n### Auth\n`x-elfa-api-key` + **HMAC** (`x-elfa-timestamp`, `x-elfa-signature`).",
-				"summary": "Close Position",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyClosePositionRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC",
-										"orderType": "market"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/positions/close/preview": {
-			"post": {
-				"operationId": "trade-preview-close-position-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradePreviewResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true,
-											"wouldExecute": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid API key",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Preview (dry-run) a position close without executing it.\n\n### Cost\nFree.\n\n### Auth\n`x-elfa-api-key` (no HMAC).",
-				"summary": "Preview Close Position",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyClosePositionRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC",
-										"orderType": "market"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/positions/tpsl": {
-			"post": {
-				"operationId": "trade-set-position-tpsl-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeResultResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"422": {
-						"description": "TP/SL rejected by the venue",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Set take-profit / stop-loss triggers on an open position.\n\n### Cost\n`1` credit per executed update.\n\n### Auth\n`x-elfa-api-key` + **HMAC** (`x-elfa-timestamp`, `x-elfa-signature`).",
-				"summary": "Set Position TP/SL",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeySetPositionTpslRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/trade/positions/tpsl/preview": {
-			"post": {
-				"operationId": "trade-preview-position-tpsl-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradePreviewResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"success": true,
-											"wouldExecute": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid API key",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"403": {
-						"description": "API key not linked for trading",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					},
-					"502": {
-						"description": "Trade service unavailable",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyTradeErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Preview (dry-run) a TP/SL update without executing it.\n\n### Cost\nFree.\n\n### Auth\n`x-elfa-api-key` (no HMAC).",
-				"summary": "Preview Set Position TP/SL",
-				"tags": [
-					"v2 Trade"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeySetPositionTpslRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"symbol": "BTC"
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
 		"/x402/v2/aggregations/trending-tokens": {
 			"get": {
 				"operationId": "x402-get-trending-tokens-v2",
@@ -6794,13 +6191,14 @@
 					}
 				},
 				"description": "Retrieve trending tokens based on mention activity and momentum.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Trending tokens",
+				"summary": "Fetch trending tokens by mention volume",
 				"tags": [
 					"x402 Aggregations"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Time window for trending analysis (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -6810,6 +6208,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -6819,6 +6218,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -6828,6 +6228,7 @@
 						}
 					},
 					{
+						"description": "Page number for pagination",
 						"in": "query",
 						"name": "page",
 						"required": false,
@@ -6838,6 +6239,7 @@
 						}
 					},
 					{
+						"description": "Number of items per page",
 						"in": "query",
 						"name": "pageSize",
 						"required": false,
@@ -6848,6 +6250,7 @@
 						}
 					},
 					{
+						"description": "Minimum number of mentions required",
 						"in": "query",
 						"name": "minMentions",
 						"required": false,
@@ -6895,13 +6298,14 @@
 					}
 				},
 				"description": "Retrieve smart account statistics for a username.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Smart stats of accounts",
+				"summary": "Fetch smart-account stats for an X username",
 				"tags": [
 					"x402 Account"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Account username to get stats for",
 						"in": "query",
 						"name": "username",
 						"required": true,
@@ -6965,13 +6369,14 @@
 					}
 				},
 				"description": "Returns the most significant mentions for a given ticker symbol.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Top mentions",
+				"summary": "Fetch top mentions for a ticker symbol",
 				"tags": [
 					"x402 Data"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "The ticker symbol to get mentions for. Use `$` prefix (e.g., `$SOL` or URL-encoded `%24SOL`) for exact cashtag matching only. Without `$`, results include both cashtag mentions and general token references.",
 						"in": "query",
 						"name": "ticker",
 						"required": true,
@@ -6980,6 +6385,7 @@
 						}
 					},
 					{
+						"description": "Time window for mentions (e.g., \"1h\", \"24h\", \"7d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -6989,6 +6395,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -6998,6 +6405,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -7007,6 +6415,7 @@
 						}
 					},
 					{
+						"description": "Page number for pagination",
 						"in": "query",
 						"name": "page",
 						"required": false,
@@ -7017,6 +6426,7 @@
 						}
 					},
 					{
+						"description": "Number of items per page",
 						"in": "query",
 						"name": "pageSize",
 						"required": false,
@@ -7027,6 +6437,7 @@
 						}
 					},
 					{
+						"description": "Set to `false` to exclude reposts (default: included)",
 						"in": "query",
 						"name": "reposts",
 						"required": false,
@@ -7088,13 +6499,14 @@
 					}
 				},
 				"description": "Search mentions by keywords or account with cursor pagination.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Multi keyword mentions search",
+				"summary": "Search mentions by keyword or account",
 				"tags": [
 					"x402 Data"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Up to 5 keywords to search for, separated by commas (optional if accountName provided)",
 						"in": "query",
 						"name": "keywords",
 						"required": false,
@@ -7103,6 +6515,7 @@
 						}
 					},
 					{
+						"description": "Account username to filter by (optional if keywords provided)",
 						"in": "query",
 						"name": "accountName",
 						"required": false,
@@ -7111,6 +6524,7 @@
 						}
 					},
 					{
+						"description": "Time window for mentions (e.g., \"1h\", \"24h\", \"7d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -7120,6 +6534,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -7129,6 +6544,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -7138,6 +6554,7 @@
 						}
 					},
 					{
+						"description": "Number of results to return (max 30)",
 						"in": "query",
 						"name": "limit",
 						"required": false,
@@ -7148,6 +6565,7 @@
 						}
 					},
 					{
+						"description": "Type of search (and, or)",
 						"in": "query",
 						"name": "searchType",
 						"required": false,
@@ -7156,6 +6574,7 @@
 						}
 					},
 					{
+						"description": "Cursor for pagination (millisecond timestamp from a previous response's `metadata.cursor`)",
 						"in": "query",
 						"name": "cursor",
 						"required": false,
@@ -7164,6 +6583,7 @@
 						}
 					},
 					{
+						"description": "Set to `false` to exclude reposts (default: included)",
 						"in": "query",
 						"name": "reposts",
 						"required": false,
@@ -7215,13 +6635,14 @@
 					}
 				},
 				"description": "Get event summary generated from keyword mention windows.\n\n**Cost:** 5 credits ($0.045). Requires x402 payment.",
-				"summary": "Event summary from keyword mentions (5 credits total)",
+				"summary": "Summarize events from keyword mentions",
 				"tags": [
 					"x402 Data"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Keywords to search for, separated by commas",
 						"in": "query",
 						"name": "keywords",
 						"required": true,
@@ -7230,6 +6651,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -7239,6 +6661,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -7248,6 +6671,7 @@
 						}
 					},
 					{
+						"description": "Time window for mentions (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -7257,6 +6681,7 @@
 						}
 					},
 					{
+						"description": "Type of search (and, or)",
 						"in": "query",
 						"name": "searchType",
 						"required": false,
@@ -7317,13 +6742,14 @@
 					}
 				},
 				"description": "Analyze narrative trends from recent market discussions.\n\n**Cost:** 5 credits ($0.045). Requires x402 payment.",
-				"summary": "Trending narratives (5 credits total)",
+				"summary": "List trending narratives with sample posts",
 				"tags": [
 					"x402 Data"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Time frame for analysis (day, week)",
 						"in": "query",
 						"name": "timeFrame",
 						"required": false,
@@ -7333,6 +6759,7 @@
 						}
 					},
 					{
+						"description": "Maximum number of narratives to return (1-20)",
 						"in": "query",
 						"name": "maxNarratives",
 						"required": false,
@@ -7343,6 +6770,7 @@
 						}
 					},
 					{
+						"description": "Maximum number of tweets per narrative (1-20)",
 						"in": "query",
 						"name": "maxTweetsPerNarrative",
 						"required": false,
@@ -7408,13 +6836,14 @@
 					}
 				},
 				"description": "Get token-related news mention feed.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Token news mentions",
+				"summary": "Fetch the token news mentions feed",
 				"tags": [
 					"x402 Data"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Time window for mentions (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -7424,6 +6853,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -7433,6 +6863,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -7442,6 +6873,7 @@
 						}
 					},
 					{
+						"description": "Page number for pagination",
 						"in": "query",
 						"name": "page",
 						"required": false,
@@ -7452,6 +6884,7 @@
 						}
 					},
 					{
+						"description": "Number of items per page",
 						"in": "query",
 						"name": "pageSize",
 						"required": false,
@@ -7462,6 +6895,7 @@
 						}
 					},
 					{
+						"description": "CoinGecko Coin IDs to filter by, comma-separated",
 						"in": "query",
 						"name": "coinIds",
 						"required": false,
@@ -7470,6 +6904,7 @@
 						}
 					},
 					{
+						"description": "Set to `false` to exclude reposts (default: included)",
 						"in": "query",
 						"name": "reposts",
 						"required": false,
@@ -7519,13 +6954,14 @@
 					}
 				},
 				"description": "Retrieve trending contract addresses on Twitter.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Trending contract addresses on Twitter",
+				"summary": "List trending contract addresses on X",
 				"tags": [
 					"x402 Aggregations"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Time window for trending analysis (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -7535,6 +6971,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -7544,6 +6981,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -7553,6 +6991,7 @@
 						}
 					},
 					{
+						"description": "Page number for pagination",
 						"in": "query",
 						"name": "page",
 						"required": false,
@@ -7563,6 +7002,7 @@
 						}
 					},
 					{
+						"description": "Number of items per page",
 						"in": "query",
 						"name": "pageSize",
 						"required": false,
@@ -7573,6 +7013,7 @@
 						}
 					},
 					{
+						"description": "Minimum number of mentions required",
 						"in": "query",
 						"name": "minMentions",
 						"required": false,
@@ -7624,13 +7065,14 @@
 					}
 				},
 				"description": "Retrieve trending contract addresses on Telegram.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Trending contract addresses on Telegram",
+				"summary": "List trending contract addresses on Telegram",
 				"tags": [
 					"x402 Aggregations"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Time window for trending analysis (e.g., \"30m\", \"1h\", \"4h\", \"24h\", \"7d\", \"30d\")",
 						"in": "query",
 						"name": "timeWindow",
 						"required": false,
@@ -7640,6 +7082,7 @@
 						}
 					},
 					{
+						"description": "Start date (unix timestamp)",
 						"in": "query",
 						"name": "from",
 						"required": false,
@@ -7649,6 +7092,7 @@
 						}
 					},
 					{
+						"description": "End date (unix timestamp)",
 						"in": "query",
 						"name": "to",
 						"required": false,
@@ -7658,6 +7102,7 @@
 						}
 					},
 					{
+						"description": "Page number for pagination",
 						"in": "query",
 						"name": "page",
 						"required": false,
@@ -7668,6 +7113,7 @@
 						}
 					},
 					{
+						"description": "Number of items per page",
 						"in": "query",
 						"name": "pageSize",
 						"required": false,
@@ -7678,6 +7124,7 @@
 						}
 					},
 					{
+						"description": "Minimum number of mentions required",
 						"in": "query",
 						"name": "minMentions",
 						"required": false,
@@ -7724,25 +7171,26 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Send a message to Elfa AI and receive a complete response.\n\n**Cost:** speed based (`fast` 5 credits/$0.045, `expert` 18 credits/$0.162).\nRequires x402 payment.",
-				"summary": "AI chat",
+				"description": "Send a message to Elfa AI and receive a complete response.\n\n`message` is required for `analysisType: \"chat\"` and ignored for other\nanalysis types. `adaptive` speed is not available on x402.\n\n**Cost:** speed based. Pay a flat price with the `exact` scheme (`fast` $1,\n`expert` $2), or authorize a ceiling with `upto` (`fast` $2, `expert` $6)\nand settle only what the turn cost. Requires x402 payment.",
+				"summary": "Generate an AI answer about crypto markets",
 				"tags": [
 					"x402 Chat"
 				],
 				"security": [],
 				"parameters": [],
 				"requestBody": {
+					"description": "Chat request: `message`, `analysisType`, and `speed`",
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/X402ChatRequestBody"
+								"$ref": "#/components/schemas/X402ChatRequestBody",
+								"description": "Chat request: `message`, `analysisType`, and `speed`"
 							},
 							"examples": {
 								"default": {
 									"summary": "Example request",
 									"value": {
-										"message": "Give me a quick macro market summary.",
 										"analysisType": "summary",
 										"speed": "fast"
 									}
@@ -7794,19 +7242,21 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Ask the AI to help you build an EQL query. It can research live market data, suggest strategies, and return ready-to-use EQL JSON.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n**Cost:** speed based (`fast` 5 credits/$0.045, `expert` 18 credits/$0.162).\nRequires x402 payment.",
-				"summary": "Auto Builder chat",
+				"description": "Ask the AI to help you build an EQL query. It can research live market data, suggest strategies, and return ready-to-use EQL JSON.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n**Cost:** speed based. Pay a flat price with the `exact` scheme (`fast` $1,\n`expert` $2), or authorize a ceiling with `upto` (`fast` $2, `expert` $6)\nand settle only what the turn cost. Requires x402 payment.",
+				"summary": "Generate an Auto plan from a prompt",
 				"tags": [
 					"x402 Auto"
 				],
 				"security": [],
 				"parameters": [],
 				"requestBody": {
+					"description": "Chat request: `query_package`, `speed`, and optional `sessionId`",
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/AutoChatRequestBody"
+								"$ref": "#/components/schemas/AutoChatRequestBody",
+								"description": "Chat request: `query_package`, `speed`, and optional `sessionId`"
 							},
 							"examples": {
 								"default": {
@@ -7862,13 +7312,14 @@
 					}
 				},
 				"description": "Validate EQL syntax and get a cost estimate without creating a query.\nReturns a simulation-based cost estimate when the query is valid.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Validate EQL query",
+				"summary": "Validate an EQL query without creating it",
 				"tags": [
 					"x402 Auto"
 				],
 				"security": [],
 				"parameters": [
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -7878,11 +7329,13 @@
 					}
 				],
 				"requestBody": {
+					"description": "Request body carrying the EQL `query` to validate",
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/ValidateQueryRequestBody"
+								"$ref": "#/components/schemas/ValidateQueryRequestBody",
+								"description": "Request body carrying the EQL `query` to validate"
 							},
 							"examples": {
 								"default": {
@@ -7990,6 +7443,7 @@
 				"security": [],
 				"parameters": [
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -7999,11 +7453,13 @@
 					}
 				],
 				"requestBody": {
+					"description": "Request body carrying the EQL `query` and an optional `title`",
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"$ref": "#/components/schemas/CreateQueryRequestBody"
+								"$ref": "#/components/schemas/CreateQueryRequestBody",
+								"description": "Request body carrying the EQL `query` and an optional `title`"
 							},
 							"examples": {
 								"default": {
@@ -8064,7 +7520,16 @@
 											"status": "string",
 											"latestEvaluation": {
 												"evaluatedAt": "string",
-												"wouldTriggerNow": true
+												"conditionStates": [
+													{
+														"index": 1,
+														"source": "string",
+														"method": "string"
+													}
+												],
+												"wouldTriggerNow": true,
+												"matchingConditions": 1,
+												"totalConditions": 1
 											},
 											"executions": [
 												{
@@ -8102,8 +7567,8 @@
 						}
 					}
 				},
-				"description": "Check query status and execution results.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Poll query status",
+				"description": "Check query status and execution results.\nRequires `x-elfa-agent-secret` header.\n\n`latestEvaluation` is the latest current-state snapshot, including\n`conditionStates[]`. Execution records include Auto Trigger Context\n(`triggerTime`, `conditionsMet`, `trigger`) when the query has fired.\n\n**Cost:** Free",
+				"summary": "Poll query status and execution results",
 				"tags": [
 					"x402 Auto"
 				],
@@ -8119,6 +7584,7 @@
 						}
 					},
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -8185,7 +7651,7 @@
 					}
 				},
 				"description": "Cancel an active query.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Cancel query",
+				"summary": "Cancel an active conditional query",
 				"tags": [
 					"x402 Auto"
 				],
@@ -8201,6 +7667,7 @@
 						}
 					},
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -8252,7 +7719,7 @@
 					}
 				},
 				"description": "List LLM output sessions for a query.\nOnly relevant for queries with `actions[0].type: \"llm\"`.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "List LLM sessions",
+				"summary": "List LLM analysis sessions for a query",
 				"tags": [
 					"x402 Auto"
 				],
@@ -8268,6 +7735,7 @@
 						}
 					},
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -8338,7 +7806,7 @@
 					}
 				},
 				"description": "Get full LLM analysis output for a specific session, including conversation messages and any trade signals.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Get LLM session details",
+				"summary": "Get full LLM output for one session",
 				"tags": [
 					"x402 Auto"
 				],
@@ -8363,6 +7831,7 @@
 						}
 					},
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -8415,7 +7884,7 @@
 					}
 				},
 				"description": "Stream query notifications via Server-Sent Events (SSE).\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Stream query notifications",
+				"summary": "Monitor query notifications over SSE",
 				"tags": [
 					"x402 Auto"
 				],
@@ -8431,6 +7900,7 @@
 						}
 					},
 					{
+						"description": "Any string you choose. Identity is `SHA256(secret)`, so reuse the same value across calls to reach your own queries.",
 						"in": "header",
 						"name": "x-elfa-agent-secret",
 						"required": true,
@@ -8471,11 +7941,7 @@
 		},
 		{
 			"name": "v2 Auto",
-			"description": "Conditional query builder and runner: create, validate, poll, and stream EQL queries, and manage LLM sessions. (Beta)\n\n**Required Sequence (Enforced)**\n1. `POST /v2/auto/queries/validate`\n2. `POST /v2/auto/queries`\n3. `POST /v2/auto/queries/{queryId}/cancel` (only while status is `active`)\n4. `DELETE /v2/auto/queries/{queryId}` (only after status is terminal: `triggered`, `expired`, `cancelled`, `failed`)\n\nIf actions include `market_order` or `limit_order`, preflight `GET /v2/auto/exchanges` before create.\n\n**Intent Routing (Strict)**\n\n| User intent | Required source | Required fields |\n| --- | --- | --- |\n| Account-anchored post intent (`@user posted ...`) | `source: \"tweet\"` | `args.username` (no `@`), `args.text`, `args.minConfidence` (start at `80`) |\n| World event intent (`ETF approved`, exploit, sanctions) | `source: \"news\"` | `args.text`, `args.minConfidence` (start at `80`) |\n| Fuzzy world-state predicate not naturally post/event matching | `source: \"llm\"` | `method: \"athena_condition\"`, `args.query`, `args.period` (`>= 1h`) |"
-		},
-		{
-			"name": "v2 Trade",
-			"description": "Direct, synchronous trading for your linked (Privy) account — place and manage orders immediately, distinct from Auto's conditional queries. (Beta)\n\n**Venues:** `hyperliquid`, `gmx`.\n\n**Auth:** `x-elfa-api-key` (linked to a Privy account; enable Auto in the dev portal). Writes (place / cancel / modify / close / tpsl) additionally require HMAC signing — send `x-elfa-timestamp` (unix seconds) and `x-elfa-signature` (hex HMAC-SHA256 over `timestamp + method + path + body`, where `path` is relative to the mount, e.g. `/orders`). Previews do not require HMAC.\n\n**Credits:** `1` credit per executed order (place / close / tpsl). Previews, cancels, and modifies are free. Failed fills (non-2xx) are never billed.\n\n**Idempotency:** not de-duplicated server-side. Send a per-request UUID in `x-correlation-id` (recommended, tracing) and avoid duplicate submissions; on a `502` timeout the order may still have landed — reconcile before retrying."
+			"description": "Conditional query builder and runner: create, validate, poll, and stream EQL queries, and manage LLM sessions.\n\n**Required Sequence (Enforced)**\n1. `POST /v2/auto/queries/validate`\n2. `POST /v2/auto/queries`\n3. `POST /v2/auto/queries/{queryId}/cancel` (only while status is `active`)\n4. `DELETE /v2/auto/queries/{queryId}` (only after status is terminal: `triggered`, `expired`, `cancelled`, `failed`)\n\nIf actions include `market_order` or `limit_order`, preflight `GET /v2/auto/exchanges` before create.\n\n**Intent Routing (Strict)**\n\n| User intent | Required source | Required fields |\n| --- | --- | --- |\n| Account-anchored post intent (`@user posted ...`) | `source: \"tweet\"` | `args.username` (no `@`), `args.text`, `args.minConfidence` (start at `80`) |\n| World event intent (`ETF approved`, exploit, sanctions) | `source: \"news\"` | `args.text`, `args.minConfidence` (start at `80`) |\n| Fuzzy world-state predicate not naturally post/event matching | `source: \"llm\"` | `method: \"athena_condition\"`, `args.query`, `args.period` (`>= 1h`) |"
 		},
 		{
 			"name": "x402 Account",
@@ -8495,7 +7961,7 @@
 		},
 		{
 			"name": "x402 Auto",
-			"description": "Pay-per-request conditional query builder and runner (x402, Beta)."
+			"description": "Pay-per-request conditional query builder and runner (x402)."
 		},
 		{
 			"name": "v1",
@@ -8516,8 +7982,7 @@
 				"v2 Data",
 				"v2 Chat",
 				"v2 System",
-				"v2 Auto",
-				"v2 Trade"
+				"v2 Auto"
 			]
 		},
 		{

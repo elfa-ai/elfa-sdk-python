@@ -1,17 +1,17 @@
-"""Asynchronous Elfa client: core data + AI chat, with ``.auto`` and ``.trade``."""
+"""Asynchronous Elfa client: core data + AI chat, with ``.auto``."""
 
-from typing import Any, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from elfa.client import _params as build
 from elfa.client.auto_client import AsyncAutoClient
-from elfa.client.base import parse_model
-from elfa.client.trade_client import AsyncTradeClient
+from elfa.client.base import chat_stream_event, parse_model
 from elfa.exceptions import ElfaAPIError, ElfaValidationError
 from elfa.models.chat import (
     ChatAnalysisType,
     ChatAssetMetadata,
     ChatResponse,
     ChatSpeed,
+    ChatStreamEvent,
 )
 from elfa.models.elfa import (
     AccountSmartStatsResponse,
@@ -27,6 +27,7 @@ from elfa.models.elfa import (
 )
 from elfa.utils.http import DEFAULT_BASE_URL, AsyncTransport
 from elfa.utils.serialize import to_compact_json
+from elfa.utils.sse import SSE_HEADERS, aiter_sse
 
 
 class AsyncElfaClient:
@@ -59,9 +60,6 @@ class AsyncElfaClient:
             api_key, base_url, timeout, retries, retry_delay, headers
         )
         self.auto = AsyncAutoClient(transport=self._transport, hmac_secret=hmac_secret)
-        self.trade = AsyncTradeClient(
-            transport=self._transport, hmac_secret=hmac_secret
-        )
 
     async def __aenter__(self) -> "AsyncElfaClient":
         return self
@@ -238,3 +236,29 @@ class AsyncElfaClient:
             "POST", "/v2/chat", content=to_compact_json(body)
         )
         return parse_model(ChatResponse, data)
+
+    async def chat_stream(
+        self,
+        message: Optional[str] = None,
+        *,
+        session_id: Optional[str] = None,
+        analysis_type: Optional[ChatAnalysisType] = None,
+        speed: Optional[ChatSpeed] = None,
+        asset_metadata: Optional[ChatAssetMetadata] = None,
+    ) -> AsyncIterator[ChatStreamEvent]:
+        """Stream a chat answer as SSE. Requires a PAYG or Enterprise API key."""
+        body = build.chat_body(
+            message, session_id, analysis_type, speed, asset_metadata
+        )
+        async with self._transport.stream_lines(
+            "POST",
+            "/v2/chat/stream",
+            headers=SSE_HEADERS,
+            content=to_compact_json(body),
+        ) as lines:
+            async for frame in aiter_sse(lines):
+                if frame.data == "[DONE]":
+                    return
+                event = chat_stream_event(frame)
+                if event is not None:
+                    yield event

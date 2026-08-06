@@ -2,13 +2,12 @@
 Elfa AI Python SDK
 
 Official Python SDK for the Elfa API — social intelligence, AI chat, and the
-Auto/Trade engines for crypto.
+Auto condition engine for crypto.
 """
 
 from elfa.client.async_client import AsyncElfaClient
 from elfa.client.auto_client import AsyncAutoClient, AutoClient
 from elfa.client.elfa_client import ElfaClient
-from elfa.client.trade_client import AsyncTradeClient, TradeClient
 from elfa.exceptions import (
     ElfaAPIError,
     ElfaAuthenticationError,
@@ -28,8 +27,6 @@ __all__ = [
     "AsyncElfaClient",
     "AutoClient",
     "AsyncAutoClient",
-    "TradeClient",
-    "AsyncTradeClient",
     "ElfaAPIError",
     "ElfaAuthenticationError",
     "ElfaRateLimitError",

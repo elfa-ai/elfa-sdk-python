@@ -32,10 +32,9 @@ from elfa.models.auto import (
     TradableExchange,
 )
 from elfa.utils.http import DEFAULT_BASE_URL, AsyncTransport, SyncTransport
-from elfa.utils.sse import aiter_sse, iter_sse
+from elfa.utils.sse import SSE_HEADERS, aiter_sse, iter_sse
 
 MOUNT = "/v2/auto"
-_SSE_HEADERS = {"Accept": "text/event-stream"}
 
 
 class AutoClient(SignedClient):
@@ -214,7 +213,7 @@ class AutoClient(SignedClient):
 
     def _stream(self, path: str) -> Iterator[AutoStreamEvent]:
         with self._transport.stream_lines(
-            "GET", f"{MOUNT}{path}", headers=_SSE_HEADERS
+            "GET", f"{MOUNT}{path}", headers=SSE_HEADERS
         ) as lines:
             for message in iter_sse(lines):
                 yield stream_event(message)
@@ -413,7 +412,7 @@ class AsyncAutoClient(SignedClient):
 
     async def _stream(self, path: str) -> AsyncIterator[AutoStreamEvent]:
         async with self._transport.stream_lines(
-            "GET", f"{MOUNT}{path}", headers=_SSE_HEADERS
+            "GET", f"{MOUNT}{path}", headers=SSE_HEADERS
         ) as lines:
             async for message in aiter_sse(lines):
                 yield stream_event(message)
