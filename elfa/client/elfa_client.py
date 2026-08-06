@@ -1,17 +1,17 @@
-"""Synchronous Elfa client: core data + AI chat, with ``.auto`` and ``.trade``."""
+"""Synchronous Elfa client: core data + AI chat, with ``.auto``."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
 
 from elfa.client import _params as build
 from elfa.client.auto_client import AutoClient
-from elfa.client.base import parse_model
-from elfa.client.trade_client import TradeClient
+from elfa.client.base import chat_stream_event, parse_model
 from elfa.exceptions import ElfaAPIError, ElfaValidationError
 from elfa.models.chat import (
     ChatAnalysisType,
     ChatAssetMetadata,
     ChatResponse,
     ChatSpeed,
+    ChatStreamEvent,
 )
 from elfa.models.elfa import (
     AccountSmartStatsResponse,
@@ -27,6 +27,7 @@ from elfa.models.elfa import (
 )
 from elfa.utils.http import DEFAULT_BASE_URL, SyncTransport
 from elfa.utils.serialize import to_compact_json
+from elfa.utils.sse import SSE_HEADERS, iter_sse
 
 
 class ElfaClient:
@@ -38,8 +39,8 @@ class ElfaClient:
         timeout: Per-request timeout in seconds.
         retries: Retries for idempotent (GET) requests.
         retry_delay: Base delay for exponential backoff.
-        hmac_secret: Secret for signing Auto/Trade mutations. Required for
-            trade-action queries and all trade writes; optional otherwise.
+        hmac_secret: Secret for signing Auto mutations. Required for
+            trade-action queries; optional otherwise.
         headers: Extra headers sent on every request.
 
     Example:
@@ -67,7 +68,6 @@ class ElfaClient:
             api_key, base_url, timeout, retries, retry_delay, headers
         )
         self.auto = AutoClient(transport=self._transport, hmac_secret=hmac_secret)
-        self.trade = TradeClient(transport=self._transport, hmac_secret=hmac_secret)
 
     def __enter__(self) -> "ElfaClient":
         return self
@@ -244,3 +244,29 @@ class ElfaClient:
             "POST", "/v2/chat", content=to_compact_json(body)
         )
         return parse_model(ChatResponse, data)
+
+    def chat_stream(
+        self,
+        message: Optional[str] = None,
+        *,
+        session_id: Optional[str] = None,
+        analysis_type: Optional[ChatAnalysisType] = None,
+        speed: Optional[ChatSpeed] = None,
+        asset_metadata: Optional[ChatAssetMetadata] = None,
+    ) -> Iterator[ChatStreamEvent]:
+        """Stream a chat answer as SSE. Requires a PAYG or Enterprise API key."""
+        body = build.chat_body(
+            message, session_id, analysis_type, speed, asset_metadata
+        )
+        with self._transport.stream_lines(
+            "POST",
+            "/v2/chat/stream",
+            headers=SSE_HEADERS,
+            content=to_compact_json(body),
+        ) as lines:
+            for frame in iter_sse(lines):
+                if frame.data == "[DONE]":
+                    return
+                event = chat_stream_event(frame)
+                if event is not None:
+                    yield event

@@ -262,3 +262,53 @@ async def test_async_ping_and_smart_stats():
         assert (await client.ping()).data.message == "pong"
         stats = await client.get_account_smart_stats("x")
         assert stats.data.smart_following_count == 1
+
+
+_STREAM_BODY = (
+    'data: {"type":"session_info","sessionId":"s1","analysisType":"chat"}\n\n'
+    'data: {"type":"text","content":"he"}\n\n'
+    ": keep-alive\n\n"
+    "data: not-json\n\n"
+    'data: {"noType":true}\n\n'
+    'data: {"type":"complete","success":true,"sessionId":"s1","creditsConsumed":3}\n\n'
+    "data: [DONE]\n\n"
+    'data: {"type":"text","content":"after"}\n\n'
+)
+
+
+@respx.mock
+def test_chat_stream_posts_body_and_yields_typed_events():
+    route = respx.post(f"{BASE_URL}/v2/chat/stream").mock(
+        return_value=httpx.Response(200, text=_STREAM_BODY)
+    )
+    client = _client()
+    events = list(client.chat_stream("hello", session_id="s1"))
+
+    request = route.calls[-1].request
+    assert request.content.decode() == '{"message":"hello","sessionId":"s1"}'
+    assert request.headers["accept"] == "text/event-stream"
+    assert [event.type for event in events] == ["session_info", "text", "complete"]
+    assert events[1].content == "he"
+    assert events[2].creditsConsumed == 3
+    client.close()
+
+
+@respx.mock
+def test_chat_stream_requires_message_for_chat_analysis():
+    client = _client()
+    with pytest.raises(ElfaValidationError):
+        list(client.chat_stream())
+    client.close()
+
+
+@respx.mock
+async def test_async_chat_stream_yields_typed_events():
+    respx.post(f"{BASE_URL}/v2/chat/stream").mock(
+        return_value=httpx.Response(200, text=_STREAM_BODY)
+    )
+    client = AsyncElfaClient(api_key="k", base_url=BASE_URL, retries=0)
+    events = [event async for event in client.chat_stream("hello")]
+
+    assert [event.type for event in events] == ["session_info", "text", "complete"]
+    assert events[2].sessionId == "s1"
+    await client.close()

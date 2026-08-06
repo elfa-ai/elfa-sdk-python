@@ -4,7 +4,7 @@ This file provides base instructions for all AI coding assistants (Claude Code, 
 
 ## Project Overview
 
-**Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, and the Auto/Trade engines for crypto. V2-only (no V1 surface).
+**Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, and the Auto condition engine for crypto. V2-only (no V1 surface).
 
 ### Technology Stack
 - **Language**: Python 3.9+
@@ -45,12 +45,11 @@ The SDK returns processed metadata and tweet links only — never raw tweet text
 For raw content, call the X (Twitter) API directly with those links/ids.
 
 ### Client Structure
-- **Sync Client**: `ElfaClient` - data + AI chat, with `.auto` and `.trade`
+- **Sync Client**: `ElfaClient` - data + AI chat (`chat`, `chat_stream`), with `.auto`
 - **Async Client**: `AsyncElfaClient` - async mirror of `ElfaClient`
 - **Auto engine**: `AutoClient` / `AsyncAutoClient` (`/v2/auto/*`) - EQL queries, drafts, sessions, executions, exchanges, SSE streams
-- **Trade**: `TradeClient` / `AsyncTradeClient` (`/v2/trade/*`) - orders and positions
 - **Transport**: `SyncTransport` / `AsyncTransport` (retries, error mapping, SSE)
-- **Signing**: Auto/Trade mutations are HMAC-signed when `hmac_secret` is set. Sign `timestamp+METHOD+mounted_path+body`; the body must be the exact compact-JSON bytes sent (httpx `content=`, never `json=`).
+- **Signing**: Auto mutations are HMAC-signed when `hmac_secret` is set. Sign `timestamp+METHOD+mounted_path+body`; the body must be the exact compact-JSON bytes sent (httpx `content=`, never `json=`).
 
 ### Error Handling Pattern
 ```python
@@ -118,10 +117,9 @@ async def test_async_method():
 elfa/
 ├── __init__.py          # Main package exports
 ├── client/              # Client implementations
-│   ├── elfa_client.py   # Sync data + chat client (.auto/.trade)
+│   ├── elfa_client.py   # Sync data + chat client (.auto)
 │   ├── async_client.py  # Async mirror
 │   ├── auto_client.py   # AutoClient / AsyncAutoClient
-│   ├── trade_client.py  # TradeClient / AsyncTradeClient
 │   ├── base.py          # SignedClient + parse helpers
 │   └── _params.py       # shared data param builders
 ├── models/              # Pydantic data models

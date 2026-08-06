@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from elfa.exceptions import ElfaAPIError
 from elfa.models.auto import AutoStreamEvent
+from elfa.models.chat import ChatStreamEvent
 from elfa.utils.hmac import sign_request
 from elfa.utils.serialize import to_compact_json
 from elfa.utils.sse import SSEMessage
@@ -33,8 +34,21 @@ def stream_event(message: SSEMessage) -> AutoStreamEvent:
     return AutoStreamEvent(event=message.event, data=data, id=message.id)
 
 
+def chat_stream_event(message: SSEMessage) -> Optional[ChatStreamEvent]:
+    """Parse one chat SSE frame, or ``None`` for frames without a usable type."""
+    if not message.data:
+        return None
+    try:
+        payload = json.loads(message.data)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("type"), str):
+        return None
+    return ChatStreamEvent.model_validate(payload)
+
+
 class SignedClient:
-    """Base for routers whose mutations are HMAC-signed (Auto, Trade).
+    """Base for routers whose mutations are HMAC-signed (Auto).
 
     ``_post_args`` / ``_delete_args`` build the compact-JSON body and signature
     headers; the sync and async subclasses only differ in how they call the

@@ -32,6 +32,7 @@ from elfa.models.chat import (
     ChatData,
     ChatResponse,
     ChatSpeed,
+    ChatStreamEvent,
 )
 from elfa.models.elfa import (
     AccountSmartStats,
@@ -55,19 +56,6 @@ from elfa.models.elfa import (
     TrendingNarrativesResponse,
     TrendingToken,
     TrendingTokensResponse,
-)
-from elfa.models.trade import (
-    CancelOrderInput,
-    ClosePositionInput,
-    ModifyOrderInput,
-    PlaceOrderInput,
-    SetPositionTpslInput,
-    TradeErrorDetail,
-    TradeExchange,
-    TradeOrderType,
-    TradePreviewResponse,
-    TradeResultResponse,
-    TradeSide,
 )
 
 __all__ = [
@@ -99,6 +87,7 @@ __all__ = [
     "ChatAssetMetadata",
     "ChatData",
     "ChatResponse",
+    "ChatStreamEvent",
     # Auto
     "TradableExchange",
     "AutoSpeed",
@@ -124,16 +113,4 @@ __all__ = [
     "AutoValidateSymbolResponse",
     "AutoSuccessResponse",
     "AutoStreamEvent",
-    # Trade
-    "TradeExchange",
-    "TradeOrderType",
-    "TradeSide",
-    "PlaceOrderInput",
-    "CancelOrderInput",
-    "ModifyOrderInput",
-    "ClosePositionInput",
-    "SetPositionTpslInput",
-    "TradeErrorDetail",
-    "TradeResultResponse",
-    "TradePreviewResponse",
 ]

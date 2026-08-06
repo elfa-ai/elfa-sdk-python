@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "elfa-sdk"
-version = "3.0.0"
-description = "Official Python SDK for the Elfa API - social intelligence, AI chat, and the Auto/Trade engines for crypto"
+version = "4.0.0"
+description = "Official Python SDK for the Elfa API - social intelligence, AI chat, and the Auto condition engine for crypto"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}

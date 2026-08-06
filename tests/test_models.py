@@ -6,7 +6,6 @@ from elfa.client.base import parse_model
 from elfa.exceptions import ElfaAPIError
 from elfa.models.auto import AutoConvertDraftResponse
 from elfa.models.elfa import KeywordMentionsV2Response, PingResponse, ProcessedMention
-from elfa.models.trade import TradeResultResponse
 
 
 def test_tolerates_unknown_fields():
@@ -39,14 +38,6 @@ def test_keyword_cursor_int_or_str():
         {"success": True, "data": [], "metadata": {"total": 1, "cursor": "abc"}}
     )
     assert as_str.metadata.cursor == "abc"
-
-
-def test_trade_result_error_detail_parsed():
-    result = TradeResultResponse.model_validate(
-        {"success": False, "error": {"code": "E1", "message": "bad"}}
-    )
-    assert result.error.code == "E1"
-    assert result.error.message == "bad"
 
 
 def test_convert_draft_response_nested_query():

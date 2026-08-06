@@ -1,8 +1,7 @@
-"""Auto condition engine + direct trading.
+"""Auto condition engine.
 
-Notification-only Auto queries need no HMAC secret. Trade-action queries and all
-``client.trade`` writes require ``hmac_secret`` (generate one in the dev portal)
-and a Privy-linked exchange account. Sizes and prices are decimal strings.
+Notification-only Auto queries need no HMAC secret. Trade-action queries require
+``hmac_secret`` (generate one in the dev portal) and a linked exchange account.
 """
 
 import os
@@ -48,18 +47,6 @@ def main() -> None:
 
         client.auto.cancel_query(query_id)
         client.auto.delete_query(query_id)
-
-        # Preview an order (no execution). Requires a linked exchange account.
-        preview = client.trade.preview_order(
-            {
-                "exchange": "hyperliquid",
-                "symbol": "BTC",
-                "side": "buy",
-                "orderType": "market",
-                "size": "0.001",
-            }
-        )
-        print("would execute:", preview.would_execute)
 
 
 if __name__ == "__main__":

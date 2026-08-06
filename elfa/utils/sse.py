@@ -5,7 +5,9 @@ Minimal Server-Sent Events parser for Auto notification streams.
 ``SSEMessage`` per event frame (frames are separated by a blank line).
 """
 
-from typing import AsyncIterator, Iterable, Iterator, List, NamedTuple, Optional
+from typing import AsyncIterator, Dict, Iterable, Iterator, List, NamedTuple, Optional
+
+SSE_HEADERS: Dict[str, str] = {"Accept": "text/event-stream"}
 
 
 class SSEMessage(NamedTuple):

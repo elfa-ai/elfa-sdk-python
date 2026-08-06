@@ -1,4 +1,4 @@
-"""Models for the AI chat endpoint."""
+"""Models for the AI chat endpoints."""
 
 from pydantic import Field
 from typing_extensions import Literal, TypedDict
@@ -27,3 +27,9 @@ class ChatData(ElfaModel):
 class ChatResponse(ElfaModel):
     success: bool
     data: ChatData
+
+
+class ChatStreamEvent(ElfaModel):
+    """One ``data:`` frame from the chat stream; payload fields arrive as extras."""
+
+    type: str

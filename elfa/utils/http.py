@@ -133,10 +133,17 @@ class SyncTransport:
 
     @contextmanager
     def stream_lines(
-        self, method: str, path: str, *, headers: Optional[Dict[str, str]] = None
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: Optional[Dict[str, str]] = None,
+        content: Optional[str] = None,
     ) -> Iterator[Iterator[str]]:
         url = f"{self.base_url}{path}"
-        with self._client.stream(method, url, headers=headers) as response:
+        with self._client.stream(
+            method, url, headers=headers, content=content
+        ) as response:
             if not response.is_success:
                 response.read()
                 raise_for_response(response)
@@ -211,10 +218,17 @@ class AsyncTransport:
 
     @asynccontextmanager
     async def stream_lines(
-        self, method: str, path: str, *, headers: Optional[Dict[str, str]] = None
+        self,
+        method: str,
+        path: str,
+        *,
+        headers: Optional[Dict[str, str]] = None,
+        content: Optional[str] = None,
     ) -> AsyncIterator[AsyncIterator[str]]:
         url = f"{self.base_url}{path}"
-        async with self._client.stream(method, url, headers=headers) as response:
+        async with self._client.stream(
+            method, url, headers=headers, content=content
+        ) as response:
             if not response.is_success:
                 await response.aread()
                 raise_for_response(response)
