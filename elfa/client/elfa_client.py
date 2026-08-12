@@ -39,8 +39,8 @@ class ElfaClient:
         timeout: Per-request timeout in seconds.
         retries: Retries for idempotent (GET) requests.
         retry_delay: Base delay for exponential backoff.
-        hmac_secret: Secret for signing Auto mutations. Required for
-            trade-action queries; optional otherwise.
+        hmac_secret: Secret for signing Auto mutations. Required for mutations
+            that are not plain notifications; optional otherwise.
         headers: Extra headers sent on every request.
 
     Example:

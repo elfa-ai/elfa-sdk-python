@@ -42,7 +42,8 @@
 						"format": "double"
 					},
 					"key": {
-						"type": "string"
+						"type": "string",
+						"description": "Masked key — prefix plus the last 4 characters (e.g. `elfak_...245c`).\nThe full secret is never returned; use it only to tell two keys apart."
 					},
 					"name": {
 						"type": "string"
@@ -118,6 +119,94 @@
 						"type": "number",
 						"format": "double",
 						"nullable": true
+					},
+					"spendCapCredits": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"bonusCredits": {
+						"type": "number",
+						"format": "double"
+					},
+					"bonusCreditsExpiresAt": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "string",
+								"format": "date-time"
+							}
+						],
+						"nullable": true
+					},
+					"userId": {
+						"type": "number",
+						"format": "double",
+						"nullable": true,
+						"description": "Account bookkeeping. Retained for backwards compatibility; not part of the supported surface."
+					},
+					"emailNotificationsEnabled": {
+						"type": "boolean"
+					},
+					"lastEmailSentAt": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "string",
+								"format": "date-time"
+							}
+						],
+						"nullable": true
+					},
+					"lastUsagePercentNotified": {
+						"type": "number",
+						"format": "double"
+					},
+					"spendAlertThreshold": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							}
+						],
+						"nullable": true
+					},
+					"spendAlertMaxFrequencyHours": {
+						"type": "number",
+						"format": "double"
+					},
+					"totalSpendAlerted": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number",
+								"format": "double"
+							}
+						]
+					},
+					"hmacEnabled": {
+						"type": "boolean",
+						"description": "Whether Auto (`/v2/auto/*`) trade actions require an HMAC signature."
+					},
+					"athenaEnabled": {
+						"type": "boolean",
+						"description": "Whether this key is provisioned for Auto / Athena."
+					},
+					"scopes": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array",
+						"description": "Effective scopes for this key, including any enterprise overlay.\n\nScopes gate the `/v2` data and chat endpoints only. They are NOT a\ncomplete access map: `/v2/auto/*` is not scope-gated, so its reachability\ncannot be inferred from this array."
 					},
 					"tier": {
 						"type": "string"
@@ -203,6 +292,19 @@
 					"project",
 					"allowOverage",
 					"maxOverage",
+					"spendCapCredits",
+					"bonusCredits",
+					"bonusCreditsExpiresAt",
+					"userId",
+					"emailNotificationsEnabled",
+					"lastEmailSentAt",
+					"lastUsagePercentNotified",
+					"spendAlertThreshold",
+					"spendAlertMaxFrequencyHours",
+					"totalSpendAlerted",
+					"hmacEnabled",
+					"athenaEnabled",
+					"scopes",
 					"tier",
 					"depositCredits",
 					"billingMode",
@@ -3086,6 +3188,21 @@
 												"project": "string",
 												"allowOverage": true,
 												"maxOverage": 1,
+												"spendCapCredits": 1,
+												"bonusCredits": 1,
+												"bonusCreditsExpiresAt": "string",
+												"userId": 1,
+												"emailNotificationsEnabled": true,
+												"lastEmailSentAt": "string",
+												"lastUsagePercentNotified": 1,
+												"spendAlertThreshold": "string",
+												"spendAlertMaxFrequencyHours": 1,
+												"totalSpendAlerted": "string",
+												"hmacEnabled": true,
+												"athenaEnabled": true,
+												"scopes": [
+													"string"
+												],
 												"tier": "string",
 												"depositCredits": 1,
 												"billingMode": "deposit",
@@ -4395,7 +4512,7 @@
 						}
 					}
 				},
-				"description": "Check whether a symbol is supported on the given exchange.\n\nUse this before submitting an EQL query based on symbols like `price` / `ta`\ntriggers or `market_order` / `limit_order` actions. Those actions\nrequire symbols on the specified exchange. Symbols not supported return `\"false\"`.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nHMAC signing is not required for this check.\n\n### Response Example (200)\n\n```json\n{\n  \"supported\": \"true\"\n}\n```",
+				"description": "Check whether a symbol is supported on the given exchange.\n\nUse this before submitting an EQL query based on symbols like `price` / `ta`\ntriggers. Symbols not supported return `\"false\"`.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nHMAC signing is not required for this check.\n\n### Response Example (200)\n\n```json\n{\n  \"supported\": \"true\"\n}\n```",
 				"summary": "Validate Symbol",
 				"tags": [
 					"v2 Auto"
@@ -4640,7 +4757,7 @@
 						}
 					}
 				},
-				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nFor trade actions (`market_order`, `limit_order`), preflight\n`GET /v2/auto/exchanges` before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`, `market_order`, `limit_order`.\n\nTrade actions (`market_order`, `limit_order`) require an active exchange\nconnection for the linked user (for example Hyperliquid via\n`POST /v2/auto/exchanges`). Without a connected exchange, query creation\ncan succeed but order execution fails when the trigger fires.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.045`)\n- fast call: `+5 credits` (`+$0.045`)\n- expert call: `+18 credits` (`+$0.162`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` whose\n`params.callback.action.type` is `market_order` or `limit_order`). HMAC is\nNOT required for notification-only actions (`notify`, `telegram_bot`,\n`webhook`, or `llm` with a notification callback). Unknown action types\ndefault to requiring HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
+				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`.\n\nNew queries cannot use trade actions (`market_order`, `limit_order`) at\ntop-level or in LLM callbacks. Athena returns `EQL_INVALID_ACTION` for\nthose actions. Existing stored trade queries remain readable, cancellable,\nand deletable, and may continue to execute while runtime trade execution\nis enabled.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.045`)\n- fast call: `+5 credits` (`+$0.045`)\n- expert call: `+18 credits` (`+$0.162`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — still required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` whose\n`params.callback.action.type` is `market_order` or `limit_order`), even\nthough Athena validation then rejects new trade plans. HMAC is NOT required\nfor notification-only actions (`notify`, `telegram_bot`, `webhook`, or\n`llm` with a notification callback). Unknown action types default to\nrequiring HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
 				"summary": "Create Query",
 				"tags": [
 					"v2 Auto"
@@ -5392,7 +5509,7 @@
 						}
 					}
 				},
-				"description": "Create or update a query draft.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` callback to\nthose). NOT required for notification-only actions. The gate exists to\nprevent a leaked API key from race-replacing a notification-only draft\nwith a trade draft before it is converted.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts\"`.",
+				"description": "Create or update a query draft.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — still required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` callback to\nthose), even though Athena validation then rejects new trade drafts. NOT\nrequired for notification-only actions. The gate remains fail-safe for\ntrade-shaped bodies.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts\"`.",
 				"summary": "Upsert Query Draft",
 				"tags": [
 					"v2 Auto"
@@ -6190,8 +6307,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Retrieve trending tokens based on mention activity and momentum.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Fetch trending tokens by mention volume",
+				"description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve trending tokens based on highest mentions count,\nfiltered by a minimum mention threshold over a specified time period.\n\nNote: You must provide EITHER timeWindow OR both from and to parameters.\nIf both timeWindow and from/to are provided, from/to takes priority.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Trending tokens",
 				"tags": [
 					"x402 Aggregations"
 				],
@@ -6297,8 +6414,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Retrieve smart account statistics for a username.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Fetch smart-account stats for an X username",
+				"description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve smart stats given username\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Smart stats of accounts",
 				"tags": [
 					"x402 Account"
 				],
@@ -6368,8 +6485,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Returns the most significant mentions for a given ticker symbol.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Fetch top mentions for a ticker symbol",
+				"description": "Returns the most significant mentions for a given ticker symbol, ranked by\nengagement (viewCount → mentionedAt → relevance) within a specified time\nwindow.\n\n**Response shape.** The response envelope is `{ success, data, metadata }`.\n`data` is a flat array of mentions; pagination state lives in `metadata`\n(`total`, `page`, `pageSize`) — never merged into the top level.\n\n**No tweet content.** V2 does not return raw tweet text. Use the `link`\nfield to fetch the original tweet via the Twitter/X API if needed.\n\n**No account object.** Unlike `/x402/v2/data/keyword-mentions`, this\nendpoint does not return an `account` object per mention.\n\n**Field notes.** `mentionedAt` is an ISO 8601 string (not a unix\ntimestamp). `repostBreakdown.smart` counts reposts by smart accounts;\n`repostBreakdown.ct` counts reposts by crypto-Twitter accounts.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Top mentions",
 				"tags": [
 					"x402 Data"
 				],
@@ -6498,8 +6615,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Search mentions by keywords or account with cursor pagination.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Search mentions by keyword or account",
+				"description": "Search mentions by keywords OR account name within a time period. Either\n`keywords` or `accountName` (or both) must be provided.\n\n**Response shape.** The response envelope is `{ success, data, metadata }`.\n`data` is a flat array of mentions; pagination state lives in `metadata`.\n\n**Cursor pagination.** Unlike `/x402/v2/data/top-mentions` (which uses\n`page`/`pageSize`), this endpoint is cursor-paginated.\n`metadata.cursor` is a millisecond timestamp (number). To fetch the next\npage, pass its value back as the `cursor` query param. Page until `data`\nis empty; `metadata.cursor` is only omitted on that empty page.\n`metadata.total` is the complete matching result set, not the remainder\nafter the cursor, and may be capped at 10000 for performance.\n\n**No tweet content.** V2 does not return raw tweet text. Use the `link`\nfield to fetch the original tweet via the Twitter/X API if needed.\n\n**Account info.** Each mention includes a minimal `account` object with\nonly `username` and `isVerified`. No id, display name, follower count, or\nbio is returned.\n\n**Field notes.** `mentionedAt` is an ISO 8601 string (not a unix\ntimestamp). `repostBreakdown.smart` counts reposts by smart accounts;\n`repostBreakdown.ct` counts reposts by crypto-Twitter accounts.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Multi keyword mentions search",
 				"tags": [
 					"x402 Data"
 				],
@@ -6634,8 +6751,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Get event summary generated from keyword mention windows.\n\n**Cost:** 5 credits ($0.045). Requires x402 payment.",
-				"summary": "Summarize events from keyword mentions",
+				"description": "Generate event summaries based on keyword mentions within a time period.\n\n**Cost:** 5 credits ($0.045). Requires x402 payment.",
+				"summary": "Event summary from keyword mentions (5 credits total)",
 				"tags": [
 					"x402 Data"
 				],
@@ -6741,8 +6858,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Analyze narrative trends from recent market discussions.\n\n**Cost:** 5 credits ($0.045). Requires x402 payment.",
-				"summary": "List trending narratives with sample posts",
+				"description": "Get trending narratives based on Twitter mentions analysis.\n\n**Cost:** 5 credits ($0.045). Requires x402 payment.",
+				"summary": "Trending narratives (5 credits total)",
 				"tags": [
 					"x402 Data"
 				],
@@ -6835,8 +6952,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Get token-related news mention feed.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "Fetch the token news mentions feed",
+				"description": "Retrieve token-related news mentions.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Token news mentions",
 				"tags": [
 					"x402 Data"
 				],
@@ -6953,8 +7070,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Retrieve trending contract addresses on Twitter.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "List trending contract addresses on X",
+				"description": "Get trending contract addresses mentioned on Twitter/X. Returns contract addresses with mention counts.\n\nNote: You must provide EITHER timeWindow OR both from and to parameters.\nIf both timeWindow and from/to are provided, from/to takes priority.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Trending contract addresses on Twitter",
 				"tags": [
 					"x402 Aggregations"
 				],
@@ -7064,8 +7181,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Retrieve trending contract addresses on Telegram.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
-				"summary": "List trending contract addresses on Telegram",
+				"description": "Get trending contract addresses mentioned on Telegram. Returns contract addresses with mention counts.\n\nNote: You must provide EITHER timeWindow OR both from and to parameters.\nIf both timeWindow and from/to are provided, from/to takes priority.\n\n**Cost:** 1 credit ($0.009). Requires x402 payment.",
+				"summary": "Trending contract addresses on Telegram",
 				"tags": [
 					"x402 Aggregations"
 				],
@@ -7171,8 +7288,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Send a message to Elfa AI and receive a complete response.\n\n`message` is required for `analysisType: \"chat\"` and ignored for other\nanalysis types. `adaptive` speed is not available on x402.\n\n**Cost:** speed based. Pay a flat price with the `exact` scheme (`fast` $1,\n`expert` $2), or authorize a ceiling with `upto` (`fast` $2, `expert` $6)\nand settle only what the turn cost. Requires x402 payment.",
-				"summary": "Generate an AI answer about crypto markets",
+				"description": "Send a message to the Elfa AI and receive a complete response.\nSuited for agents and integrations that do not support server-sent events (SSE).\n\n**Analysis types and required fields:**\n- `chat` (default) — general conversation. Requires `message`.\n- `macro` — macro market overview. No `message` needed.\n- `summary` — quick market summary. No `message` needed.\n- `tokenIntro` — token introduction. Requires `assetMetadata` with `symbol`, or `chain` + `contractAddress`.\n- `tokenAnalysis` — token trade setup analysis. Same `assetMetadata` requirements as `tokenIntro`.\n- `accountAnalysis` — Twitter/X account analysis. Requires `assetMetadata.username`.\n\n`message` is only used for `analysisType: \"chat\"` and is ignored for other\nanalysis types. `adaptive` speed is not available on x402.\n\n**`assetMetadata` fields (when applicable):**\n- `symbol` — token ticker symbol (e.g. `\"BTC\"`, `\"$ETH\"`)\n- `chain` — blockchain name (e.g. `\"ethereum\"`, `\"solana\"`)\n- `contractAddress` — token contract address\n- `username` — Twitter/X username for account analysis\n\n**Cost:** speed based. Pay a flat price with the `exact` scheme (`fast` $1,\n`expert` $2), or authorize a ceiling with `upto` (`fast` $2, `expert` $6)\nand settle only what the turn cost. Requires x402 payment.",
+				"summary": "AI chat",
 				"tags": [
 					"x402 Chat"
 				],
@@ -7243,7 +7360,7 @@
 					}
 				},
 				"description": "Ask the AI to help you build an EQL query. It can research live market data, suggest strategies, and return ready-to-use EQL JSON.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n**Cost:** speed based. Pay a flat price with the `exact` scheme (`fast` $1,\n`expert` $2), or authorize a ceiling with `upto` (`fast` $2, `expert` $6)\nand settle only what the turn cost. Requires x402 payment.",
-				"summary": "Generate an Auto plan from a prompt",
+				"summary": "Builder Chat",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7312,7 +7429,7 @@
 					}
 				},
 				"description": "Validate EQL syntax and get a cost estimate without creating a query.\nReturns a simulation-based cost estimate when the query is valid.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Validate an EQL query without creating it",
+				"summary": "Validate Query",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7436,7 +7553,7 @@
 					}
 				},
 				"description": "Create and activate a conditional query that monitors market data and triggers actions when conditions are met.\n\n**Allowed action types:** `webhook`, `notify`, `telegram_bot`, `llm`.\nTrade execution is not available via x402.\n\n**Cost:** Dynamic. Base fee is 5 credits ($0.045) plus simulated LLM calls:\nfast = +5 credits (+$0.045) per call, expert = +18 credits (+$0.162) per call.\nUse the validate endpoint to preview costs.\nRequires `x-elfa-agent-secret` header.\nRequires x402 payment.",
-				"summary": "Create conditional query",
+				"summary": "Create Query",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7568,7 +7685,7 @@
 					}
 				},
 				"description": "Check query status and execution results.\nRequires `x-elfa-agent-secret` header.\n\n`latestEvaluation` is the latest current-state snapshot, including\n`conditionStates[]`. Execution records include Auto Trigger Context\n(`triggerTime`, `conditionsMet`, `trigger`) when the query has fired.\n\n**Cost:** Free",
-				"summary": "Poll query status and execution results",
+				"summary": "Poll Query",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7651,7 +7768,7 @@
 					}
 				},
 				"description": "Cancel an active query.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Cancel an active conditional query",
+				"summary": "Cancel Query",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7719,7 +7836,7 @@
 					}
 				},
 				"description": "List LLM output sessions for a query.\nOnly relevant for queries with `actions[0].type: \"llm\"`.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "List LLM analysis sessions for a query",
+				"summary": "List LLM Sessions",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7806,7 +7923,7 @@
 					}
 				},
 				"description": "Get full LLM analysis output for a specific session, including conversation messages and any trade signals.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Get full LLM output for one session",
+				"summary": "LLM Session Details",
 				"tags": [
 					"x402 Auto"
 				],
@@ -7884,7 +8001,7 @@
 					}
 				},
 				"description": "Stream query notifications via Server-Sent Events (SSE).\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
-				"summary": "Monitor query notifications over SSE",
+				"summary": "Stream Notifications",
 				"tags": [
 					"x402 Auto"
 				],

@@ -120,15 +120,6 @@ def test_validate_symbol_url_encodes_symbol():
 
 
 @respx.mock
-def test_disconnect_exchange_parses_success():
-    respx.delete(f"{BASE_URL}/v2/auto/exchanges/hyperliquid").mock(
-        return_value=httpx.Response(200, json={"success": True})
-    )
-    result = AutoClient(transport=_transport()).disconnect_exchange("hyperliquid")
-    assert result.success is True
-
-
-@respx.mock
 def test_convert_draft_parses_response():
     respx.post(f"{BASE_URL}/v2/auto/queries/drafts/d1/convert").mock(
         return_value=httpx.Response(
