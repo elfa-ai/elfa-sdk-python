@@ -1,7 +1,7 @@
 """Auto condition engine clients (`/v2/auto/*`), sync and async.
 
 Mutations are HMAC-signed when an ``hmac_secret`` is configured (required for
-trade-action queries and all exchange writes; harmless for notification-only
+any mutation that is not a plain notification; harmless for notification-only
 queries). Notification streams are exposed as generators over SSE.
 """
 
@@ -14,10 +14,8 @@ from elfa.models.auto import (
     AutoChatResponse,
     AutoConvertDraftResponse,
     AutoDraft,
-    AutoExchangeConnection,
     AutoExecution,
     AutoListDraftsResponse,
-    AutoListExchangesResponse,
     AutoListExecutionsResponse,
     AutoListQueriesResponse,
     AutoListSessionsResponse,
@@ -26,7 +24,6 @@ from elfa.models.auto import (
     AutoSession,
     AutoSpeed,
     AutoStreamEvent,
-    AutoSuccessResponse,
     AutoValidateResponse,
     AutoValidateSymbolResponse,
     TradableExchange,
@@ -185,19 +182,6 @@ class AutoClient(SignedClient):
 
     def get_execution(self, execution_id: str) -> AutoExecution:
         return parse_model(AutoExecution, self._get(f"/executions/{execution_id}"))
-
-    def list_exchanges(self) -> AutoListExchangesResponse:
-        return parse_model(AutoListExchangesResponse, self._get("/exchanges"))
-
-    def connect_exchange(
-        self, exchange_input: Dict[str, Any]
-    ) -> AutoExchangeConnection:
-        return parse_model(
-            AutoExchangeConnection, self._post("/exchanges", exchange_input)
-        )
-
-    def disconnect_exchange(self, exchange: TradableExchange) -> AutoSuccessResponse:
-        return parse_model(AutoSuccessResponse, self._delete(f"/exchanges/{exchange}"))
 
     def validate_symbol(
         self, exchange: TradableExchange, symbol: str
@@ -379,23 +363,6 @@ class AsyncAutoClient(SignedClient):
     async def get_execution(self, execution_id: str) -> AutoExecution:
         return parse_model(
             AutoExecution, await self._get(f"/executions/{execution_id}")
-        )
-
-    async def list_exchanges(self) -> AutoListExchangesResponse:
-        return parse_model(AutoListExchangesResponse, await self._get("/exchanges"))
-
-    async def connect_exchange(
-        self, exchange_input: Dict[str, Any]
-    ) -> AutoExchangeConnection:
-        return parse_model(
-            AutoExchangeConnection, await self._post("/exchanges", exchange_input)
-        )
-
-    async def disconnect_exchange(
-        self, exchange: TradableExchange
-    ) -> AutoSuccessResponse:
-        return parse_model(
-            AutoSuccessResponse, await self._delete(f"/exchanges/{exchange}")
         )
 
     async def validate_symbol(

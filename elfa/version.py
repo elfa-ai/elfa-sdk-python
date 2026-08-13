@@ -1,3 +1,3 @@
 """Single source of truth for the SDK version."""
 
-VERSION = "4.0.0"
+VERSION = "5.0.0"

@@ -144,20 +144,6 @@ class AutoListExecutionsResponse(ElfaModel):
     data: List[AutoExecution] = Field(default_factory=list)
 
 
-class AutoExchangeConnection(ElfaModel):
-    exchange: TradableExchange
-    credential_type: str = Field(alias="credentialType")
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    is_active: bool = Field(alias="isActive")
-    id: int
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-
-class AutoListExchangesResponse(ElfaModel):
-    connections: List[AutoExchangeConnection] = Field(default_factory=list)
-
-
 class AutoValidateSymbolResponse(ElfaModel):
     supported: Literal["true", "false"]
 

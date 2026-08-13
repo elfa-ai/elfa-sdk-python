@@ -1,7 +1,7 @@
 """Auto condition engine.
 
-Notification-only Auto queries need no HMAC secret. Trade-action queries require
-``hmac_secret`` (generate one in the dev portal) and a linked exchange account.
+Notification-only Auto queries need no HMAC secret. Any other mutation shape
+requires ``hmac_secret`` (generate one in the dev portal).
 """
 
 import os

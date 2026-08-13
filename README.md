@@ -10,7 +10,7 @@ Official Python SDK for the Elfa API v2 — social intelligence, AI chat, and th
 
 - **Social intelligence** — trending tokens, mentions, narratives, smart stats, event summaries
 - **AI chat** — market analysis and conversational chat via `client.chat`, streamed via `client.chat_stream`
-- **Auto condition engine** — build EQL queries that notify or trade via `client.auto`
+- **Auto condition engine** — build EQL queries that watch markets and notify via `client.auto`
 - **Sync and async** — `ElfaClient` and `AsyncElfaClient`, same surface
 - **Typed** — Pydantic v2 models, full type hints
 - **Robust** — retries with backoff, typed errors, HMAC request signing
@@ -67,7 +67,7 @@ client = ElfaClient(
     timeout=30.0,                    # per-request timeout, seconds
     retries=3,                       # retries for idempotent (GET) requests
     retry_delay=1.0,                 # base delay for exponential backoff
-    hmac_secret=None,                # required for Auto trade-action queries (see below)
+    hmac_secret=None,                # required for Auto mutations that are not plain notifications (see below)
     headers=None,                    # extra headers sent on every request
 )
 
@@ -135,7 +135,7 @@ Event types are `session_info`, `title`, `text`, `text_complete`, `status`, `cre
 
 ## Auto condition engine (`client.auto`)
 
-Build [EQL](https://docs.elfa.ai) queries that watch conditions and fire actions (notify, webhook, or trade). Notification-only queries need no secret; trade-action queries require an `hmac_secret`.
+Build [EQL](https://docs.elfa.ai) queries that watch conditions and fire actions (`notify`, `webhook`, `telegram_bot`, `llm`). Notification-only queries need no secret; any other mutation shape requires an `hmac_secret`.
 
 ```python
 query = {
@@ -162,7 +162,7 @@ client.auto.cancel_query(query_id)
 client.auto.delete_query(query_id)
 ```
 
-Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, exchanges (`list_exchanges`/`connect_exchange`/`disconnect_exchange`), and `validate_symbol`.
+Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, and `validate_symbol`.
 
 ### Streaming notifications (SSE)
 
@@ -177,7 +177,7 @@ async for event in async_client.auto.stream_all():
 
 ## HMAC signing
 
-Auto trade-action queries are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://docs.elfa.ai).
+Auto mutations are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://docs.elfa.ai).
 
 ## Error handling
 
