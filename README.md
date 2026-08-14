@@ -164,6 +164,21 @@ client.auto.delete_query(query_id)
 
 Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, and `validate_symbol`.
 
+Builder Chat is dynamically priced, so it reports what the turn cost:
+
+```python
+reply = client.auto.chat("Alert me when BTC breaks 100k")
+print(reply.credits)  # e.g. 104 — same total as the x-elfa-credits header
+```
+
+### Response shapes are extensible
+
+Every response model sets `extra="allow"`, so fields the API adds are kept as
+model extras rather than raising. Do the same in your own code — pinning an Elfa
+response with an exact-shape assertion (Pydantic `extra="forbid"`,
+`z.strictObject`, `additionalProperties: false`) means the next additive field
+breaks your client even though the API stayed backwards compatible.
+
 ### Streaming notifications (SSE)
 
 ```python
