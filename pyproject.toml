@@ -54,6 +54,7 @@ dev = [
 Homepage = "https://elfa.ai"
 Documentation = "https://docs.elfa.ai"
 Repository = "https://github.com/elfa-ai/elfa-sdk-python"
+Changelog = "https://github.com/elfa-ai/elfa-sdk-python/blob/main/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/elfa-ai/elfa-sdk-python/issues"
 
 [tool.setuptools.packages.find]

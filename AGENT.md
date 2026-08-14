@@ -156,6 +156,47 @@ to whoever opened the PR. If a PR carries someone else's commits, add a
 `Co-authored-by:` trailer to your own commit before merging; afterwards it
 cannot be fixed without rewriting `main`.
 
+### Release Process
+
+Releases run through `.github/workflows/release.yml`, which publishes to PyPI and
+creates the GitHub release. Do not publish by hand.
+
+1. Land the version bump in `pyproject.toml` (and `elfa/version.py`) plus the
+   matching `## <version>` entry in `CHANGELOG.md` — the release body is
+   extracted from that section
+2. Either push a `v*.*.*` tag or dispatch **Actions → Release → Run workflow**
+   from `main`
+3. The workflow runs lint, type-check and the test suite, then builds, publishes
+   and creates the release
+
+`validate` compares `pyproject.toml` against the version the release asks for —
+the dispatch input, or the tag name minus its `v` — and fails on a mismatch. So
+if you release by tag, tag the commit whose `pyproject.toml` already carries that
+version. The `release` environment has no branch policy, which is why a tag push
+reaches it (the JS SDK needed an explicit `tag v*` rule added for this).
+
+Without a `CHANGELOG.md` entry for the version, the release falls back to the
+commit log since the previous tag — a release still gets notes, just thin ones.
+
+**Publishing uses OIDC trusted publishing — there is no PyPI token.** The trust
+relationship is configured on pypi.org against values that must keep matching the
+workflow:
+
+| PyPI setting      | Value              |
+| ----------------- | ------------------ |
+| Repository        | `elfa-sdk-python`  |
+| Workflow filename | `release.yml`      |
+| Environment name  | `release`          |
+
+Renaming the workflow file or the `release` environment breaks publishing until
+the PyPI-side config is updated to match. Note the repo has both a `production`
+and a `release` environment; PyPI is wired to `release`.
+
+PyPI's JSON API is CDN-cached, so `pypi.org/pypi/elfa-sdk/json` can report the
+previous version for a while after a successful publish. Confirm against
+`https://pypi.org/pypi/elfa-sdk/<version>/json` or the simple index instead of
+concluding the publish failed.
+
 ## CI Gates
 
 `.github/workflows/ci.yml` runs the test matrix, an integration smoke test, the
