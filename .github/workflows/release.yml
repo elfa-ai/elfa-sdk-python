@@ -37,16 +37,23 @@ jobs:
           make type-check
           make test-coverage
           
+      # Covers both entry points. A tag push publishes whatever version
+      # pyproject.toml carries at that commit, so v5.1.0 pointing at a commit
+      # still on 5.0.0 would silently try to republish 5.0.0 — catch it here
+      # rather than at the PyPI upload.
       - name: Validate version
-        if: github.event.inputs.version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          TAG_NAME: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           PACKAGE_VERSION=$(python -c "import tomllib; f=open('pyproject.toml','rb'); data=tomllib.load(f); f.close(); print(data['project']['version'])")
-          INPUT_VERSION="${{ github.event.inputs.version }}"
-          if [ "$PACKAGE_VERSION" != "$INPUT_VERSION" ]; then
-            echo "❌ Version mismatch: pyproject.toml has $PACKAGE_VERSION but input is $INPUT_VERSION"
+          EXPECTED="${INPUT_VERSION:-${TAG_NAME#v}}"
+          if [ "$PACKAGE_VERSION" != "$EXPECTED" ]; then
+            echo "❌ Version mismatch: pyproject.toml has $PACKAGE_VERSION but release asks for $EXPECTED"
             exit 1
           fi
-          echo "✅ Version validation passed"
+          echo "✅ Version validation passed for $PACKAGE_VERSION"
 
   publish:
     name: Publish to PyPI
@@ -103,45 +110,76 @@ jobs:
           echo "name=$(python -c "import tomllib; f=open('pyproject.toml','rb'); data=tomllib.load(f); f.close(); print(data['project']['name'])")" >> $GITHUB_OUTPUT
           echo "version=$(python -c "import tomllib; f=open('pyproject.toml','rb'); data=tomllib.load(f); f.close(); print(data['project']['version'])")" >> $GITHUB_OUTPUT
           
-      - name: Generate changelog
+      - name: Generate release notes
         id: changelog
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
         run: |
-          # Get previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-          CURRENT_TAG="v${{ steps.package.outputs.version }}"
-          
-          echo "## Changes" > CHANGELOG.md
-          
-          if [ -n "$PREV_TAG" ]; then
-            echo "" >> CHANGELOG.md
-            git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges >> CHANGELOG.md
+          set -euo pipefail
+
+          # Prefer the curated CHANGELOG.md entry for this version — that is what
+          # readers actually need on a release, especially the breaking changes.
+          # Pull out everything between "## <version>" and the next "## " heading.
+          # The version is escaped first so its dots are not treated as regex
+          # wildcards (3.0.0 must not match 3x0y0).
+          awk -v ver="$VERSION" '
+            BEGIN { gsub(/\./, "\\.", ver) }
+            $0 ~ "^## +" ver "([[:space:]]|$)" { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > section.md || true
+
+          # Trim leading and trailing blank lines from the extracted section.
+          sed -i -e '/./,$!d' section.md
+          sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' section.md
+
+          if [ -s section.md ]; then
+            echo "Using CHANGELOG.md entry for $VERSION"
+            {
+              echo "## Changes"
+              echo ""
+              cat section.md
+            } > RELEASE_NOTES.md
           else
-            echo "- Initial release" >> CHANGELOG.md
+            # No curated entry for this version — fall back to the commit log so a
+            # release still gets notes rather than an empty body.
+            echo "No CHANGELOG.md entry for $VERSION; falling back to commit log"
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+
+            echo "## Changes" > RELEASE_NOTES.md
+            if [ -n "$PREV_TAG" ]; then
+              echo "" >> RELEASE_NOTES.md
+              git log "$PREV_TAG"..HEAD --pretty=format:"- %s (%h)" --no-merges >> RELEASE_NOTES.md
+              echo "" >> RELEASE_NOTES.md
+            else
+              echo "- Initial release" >> RELEASE_NOTES.md
+            fi
           fi
-          
-          echo "" >> CHANGELOG.md
-          echo "## Installation" >> CHANGELOG.md
-          echo "" >> CHANGELOG.md
-          echo '```bash' >> CHANGELOG.md
-          echo "pip install ${{ steps.package.outputs.name }}==${{ steps.package.outputs.version }}" >> CHANGELOG.md
-          echo '```' >> CHANGELOG.md
-          
-          echo "" >> CHANGELOG.md
-          echo "## API Reference" >> CHANGELOG.md
-          echo "" >> CHANGELOG.md
-          echo "For detailed API documentation, visit [docs.elfa.ai](https://docs.elfa.ai)" >> CHANGELOG.md
-          
-          # Output for GitHub release
-          cat CHANGELOG.md >> $GITHUB_STEP_SUMMARY
-          
+
+          {
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo '```bash'
+            echo "pip install ${PACKAGE_NAME}==${VERSION}"
+            echo '```'
+            echo ""
+            echo "## API Reference"
+            echo ""
+            echo "For detailed API documentation, visit [docs.elfa.ai](https://docs.elfa.ai)"
+          } >> RELEASE_NOTES.md
+
+          cat RELEASE_NOTES.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package.outputs.version }}
           name: Release v${{ steps.package.outputs.version }}
-          body_path: CHANGELOG.md
+          body_path: RELEASE_NOTES.md
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(steps.package.outputs.version, '-') }}
 
   notify:
     name: Notify Success
