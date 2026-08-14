@@ -86,7 +86,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          pip install pip-audit bandit
+          # Pinned to a minor line: these two now decide whether CI passes, so
+          # an unannounced major would change the gate under us. The advisory
+          # database is fetched at run time, so pinning the tool does not stale
+          # the findings.
+          pip install "pip-audit~=2.10" "bandit~=1.9"
 
       # pip-audit rather than safety: safety 3 requires an account for the full
       # advisory database and has deprecated `safety check`, so it degraded to
