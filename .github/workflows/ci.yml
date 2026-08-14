@@ -91,8 +91,14 @@ jobs:
       # pip-audit rather than safety: safety 3 requires an account for the full
       # advisory database and has deprecated `safety check`, so it degraded to
       # a no-op here. pip-audit is PyPA's, needs no auth, and fails the job.
+      #
+      # `.` audits the project's declared dependency tree in an isolated build
+      # env, not the ambient one. Auditing the environment flags the runner's
+      # own setuptools/pip — build tooling this package never ships — which
+      # fails the job over something no release of ours can fix. Same intent as
+      # `npm audit --omit=dev` on the JS SDK: audit what consumers install.
       - name: Run dependency audit (pip-audit)
-        run: pip-audit --progress-spinner off
+        run: pip-audit --progress-spinner off .
 
       # -ll reports medium severity and above and exits non-zero on a finding.
       - name: Run security linter (bandit)
