@@ -21,6 +21,9 @@ class AutoChatResponse(ElfaModel):
     title: Optional[str] = None
     reasoning: Optional[str] = None
     plan_ids: List[str] = Field(default_factory=list, alias="planIds")
+    #: Credits this call cost — the same total as the ``x-elfa-credits`` header.
+    #: Optional because older API deployments do not return it.
+    credits: Optional[float] = None
 
 
 class AutoEstimatedCost(ElfaModel):
