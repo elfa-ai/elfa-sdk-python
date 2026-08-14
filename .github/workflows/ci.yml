@@ -86,13 +86,27 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          pip install safety bandit
-          
-      - name: Run security audit (safety)
-        run: safety check --json || true
-        
+          # Pinned to a minor line: these two now decide whether CI passes, so
+          # an unannounced major would change the gate under us. The advisory
+          # database is fetched at run time, so pinning the tool does not stale
+          # the findings.
+          pip install "pip-audit~=2.10" "bandit~=1.9"
+
+      # pip-audit rather than safety: safety 3 requires an account for the full
+      # advisory database and has deprecated `safety check`, so it degraded to
+      # a no-op here. pip-audit is PyPA's, needs no auth, and fails the job.
+      #
+      # `.` audits the project's declared dependency tree in an isolated build
+      # env, not the ambient one. Auditing the environment flags the runner's
+      # own setuptools/pip — build tooling this package never ships — which
+      # fails the job over something no release of ours can fix. Same intent as
+      # `npm audit --omit=dev` on the JS SDK: audit what consumers install.
+      - name: Run dependency audit (pip-audit)
+        run: pip-audit --progress-spinner off .
+
+      # -ll reports medium severity and above and exits non-zero on a finding.
       - name: Run security linter (bandit)
-        run: bandit -r elfa/ -f json || true
+        run: bandit -r elfa/ -ll
 
   publish-check:
     name: Publish Readiness

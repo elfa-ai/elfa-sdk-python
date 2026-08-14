@@ -137,6 +137,47 @@ examples/                # Usage examples
 4. **Examples** - Add usage examples if public API
 5. **Documentation** - Update docstrings and README if needed
 
+### Before Merging a PR
+
+**A green check does not mean a clean review.** Sourcery posts findings as a
+`COMMENTED` review: it does not block, and its check run reports `pass` whatever
+it found. All-green `gh pr checks` proves the reviewer ran, nothing more.
+
+```bash
+gh api repos/elfa-ai/elfa-sdk-python/pulls/<n>/reviews  --jq '.[]|"[\(.user.login)] \(.body)"'
+gh api repos/elfa-ai/elfa-sdk-python/pulls/<n>/comments --jq '.[]|"\(.path):\(.line) \(.body)"'
+```
+
+Fix each finding or reply saying why not. Three `elfa-sdk-js` PRs were merged off
+a green check with unread findings; all three were valid and needed a follow-up.
+
+**Squash merges discard commit authorship** — the squashed commit is attributed
+to whoever opened the PR. If a PR carries someone else's commits, add a
+`Co-authored-by:` trailer to your own commit before merging; afterwards it
+cannot be fixed without rewriting `main`.
+
+## CI Gates
+
+`.github/workflows/ci.yml` runs the test matrix, an integration smoke test, the
+security audit and a publish-readiness check; `codeql.yml` runs static analysis.
+
+**The security job is allowed to fail, and that is deliberate.** It previously
+ended both steps in `|| true`, so it reported green whatever it found — and
+`safety check` had been deprecated in safety 3, which needs an account for the
+full advisory database, so it was likely finding nothing anyway. A check that
+cannot fail is worse than no check: the green tick implies coverage that is not
+there. If you touch this job, do not reintroduce a swallow.
+
+- `pip-audit --progress-spinner off .` — the trailing `.` matters. It audits the
+  project's declared dependency tree in an isolated build env. Auditing the
+  ambient environment instead flags the runner's own `setuptools`/`pip`, build
+  tooling this package never ships, and fails the job over something no release
+  of ours can fix. Same scope as `npm audit --omit=dev` on the JS SDK.
+- `bandit -r elfa/ -ll` — medium severity and above.
+- Both tools are pinned with `~=`. They decide whether CI passes, so an
+  unannounced major would move the gate without anyone choosing it. Pinning does
+  not stale the findings: both fetch advisory data at run time.
+
 ## Dependencies
 
 ### Core Dependencies
