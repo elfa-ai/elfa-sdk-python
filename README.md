@@ -192,7 +192,7 @@ async for event in async_client.auto.stream_all():
 
 ## HMAC signing
 
-Auto mutations are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://docs.elfa.ai).
+Auto mutations are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://dev.elfa.ai).
 
 ## Error handling
 
