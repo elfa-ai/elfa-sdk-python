@@ -32,8 +32,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyStatusDataV2": {
 				"properties": {
@@ -313,8 +312,7 @@
 					"isExpired",
 					"remainingRequests"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyStatusResponseV2": {
 				"properties": {
@@ -329,8 +327,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"TrendingTokensResponseV2": {
 				"properties": {
@@ -394,8 +391,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"AccountSmartStatsResponseV2": {
 				"properties": {
@@ -437,8 +433,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"MentionV2": {
 				"description": "A single sanitized mention returned by V2 data endpoints.\n\nV2 never returns raw tweet text or content — use `link` to fetch the original\ntweet if needed. `mentionedAt` is an ISO 8601 string.",
@@ -528,8 +523,7 @@
 					"type",
 					"repostBreakdown"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"TopMentionsResponseV2": {
 				"properties": {
@@ -570,8 +564,7 @@
 					"data",
 					"metadata"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"KeywordMentionV2": {
 				"description": "Mention returned by `/v2/data/keyword-mentions`. Includes minimal account\ninfo; no follower counts, display name, bio, or account ID are returned.",
@@ -677,8 +670,7 @@
 					"type",
 					"repostBreakdown"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"KeywordMentionsResponseV2": {
 				"properties": {
@@ -714,8 +706,7 @@
 					"data",
 					"metadata"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"EventSummaryResponseV2": {
 				"properties": {
@@ -777,8 +768,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"TrendingNarrativesResponseV2": {
 				"properties": {
@@ -843,8 +833,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"TokenNewsResponseV2": {
 				"properties": {
@@ -885,8 +874,7 @@
 					"data",
 					"metadata"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"TrendingContractAddressV2": {
 				"properties": {
@@ -910,8 +898,7 @@
 					"chain",
 					"mentionCount"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"TrendingCAsResponseV2": {
 				"properties": {
@@ -952,8 +939,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ChatResponseV2": {
 				"properties": {
@@ -985,8 +971,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ChatAssetMetadataV2": {
 				"properties": {
@@ -1323,6 +1308,11 @@
 						},
 						"type": "array",
 						"description": "Related plan IDs"
+					},
+					"credits": {
+						"type": "number",
+						"format": "double",
+						"description": "Credits this call cost. Same total as the `x-elfa-credits` response header,\nso a consumer can reconcile from either."
 					}
 				},
 				"required": [
@@ -1330,10 +1320,10 @@
 					"response",
 					"title",
 					"reasoning",
-					"planIds"
+					"planIds",
+					"credits"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"Record_string.unknown_": {
 				"properties": {},
@@ -1359,8 +1349,7 @@
 					"field",
 					"message"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyAutoErrorDetails": {
 				"anyOf": [
@@ -1433,8 +1422,7 @@
 				"required": [
 					"supported"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyValidateQueryResponse": {
 				"properties": {
@@ -1484,8 +1472,7 @@
 					"errors",
 					"warnings"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyValidateQueryRequestBody": {
 				"properties": {
@@ -1616,8 +1603,7 @@
 						"description": "Whether the condition value came from cache"
 					}
 				},
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyPollQueryLatestEvaluation": {
 				"properties": {
@@ -1658,20 +1644,10 @@
 					"matchingConditions",
 					"totalConditions"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyAutoExecutionDetails": {
 				"properties": {
-					"trade": {
-						"allOf": [
-							{
-								"$ref": "#/components/schemas/JsonObject"
-							}
-						],
-						"nullable": true,
-						"description": "Trade action summary, when the execution placed or attempted an order"
-					},
 					"notification": {
 						"allOf": [
 							{
@@ -1709,8 +1685,7 @@
 						"description": "Script action summary, when applicable"
 					}
 				},
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyAutoExecutionError": {
 				"properties": {
@@ -1754,8 +1729,7 @@
 				"required": [
 					"source"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyAutoTriggerMatch": {
 				"properties": {
@@ -1821,8 +1795,7 @@
 				"required": [
 					"condition"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyAutoTriggerPayload": {
 				"properties": {
@@ -1842,8 +1815,7 @@
 						"description": "Conditions that were met when the trigger fired"
 					}
 				},
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyPollQueryExecution": {
 				"properties": {
@@ -1901,8 +1873,7 @@
 					"status",
 					"createdAt"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyPollQueryResponse": {
 				"properties": {
@@ -1942,8 +1913,7 @@
 					"latestEvaluation",
 					"executions"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyCancelQueryResponse": {
 				"properties": {},
@@ -1976,8 +1946,7 @@
 					"status",
 					"executedAt"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyListSessionsResponse": {
 				"properties": {
@@ -2152,8 +2121,7 @@
 						"description": "Completion timestamp, if finished"
 					}
 				},
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyAutoPagination": {
 				"properties": {
@@ -2177,8 +2145,7 @@
 						"description": "Whether another page exists"
 					}
 				},
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyListExecutionsResponse": {
 				"properties": {
@@ -2197,269 +2164,10 @@
 				"required": [
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ApiKeyGetExecutionResponse": {
 				"$ref": "#/components/schemas/ApiKeyAutoExecution"
-			},
-			"MercuryExchange": {
-				"type": "string",
-				"enum": [
-					"hyperliquid",
-					"gmx",
-					"binance",
-					"pacifica"
-				]
-			},
-			"ApiKeyAutoExchange": {
-				"$ref": "#/components/schemas/MercuryExchange"
-			},
-			"ApiKeyExchangeConnection": {
-				"properties": {
-					"exchange": {
-						"$ref": "#/components/schemas/ApiKeyAutoExchange",
-						"description": "Exchange identifier"
-					},
-					"credentialType": {
-						"type": "string",
-						"description": "Credential strategy identifier"
-					},
-					"metadata": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Exchange-specific metadata"
-					},
-					"isActive": {
-						"type": "boolean",
-						"description": "Whether the connection is currently active"
-					},
-					"id": {
-						"type": "number",
-						"format": "double",
-						"description": "Connection identifier"
-					},
-					"createdAt": {
-						"type": "string",
-						"description": "Creation timestamp"
-					},
-					"updatedAt": {
-						"type": "string",
-						"description": "Last update timestamp"
-					}
-				},
-				"required": [
-					"exchange",
-					"credentialType",
-					"metadata",
-					"isActive",
-					"id",
-					"createdAt",
-					"updatedAt"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyListExchangesResponse": {
-				"properties": {
-					"connections": {
-						"items": {
-							"$ref": "#/components/schemas/ApiKeyExchangeConnection"
-						},
-						"type": "array",
-						"description": "Active exchange connections for the linked Auto user"
-					}
-				},
-				"required": [
-					"connections"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyConnectExchangeResponse": {
-				"$ref": "#/components/schemas/ApiKeyExchangeConnection"
-			},
-			"ApiKeyConnectHyperliquidExchangeRequestBody": {
-				"properties": {
-					"exchange": {
-						"type": "string",
-						"enum": [
-							"hyperliquid"
-						],
-						"nullable": false,
-						"description": "Exchange identifier"
-					},
-					"credentialType": {
-						"type": "string",
-						"description": "Credential strategy identifier, e.g. `agent_wallet`"
-					},
-					"metadata": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Exchange-specific metadata such as owner/agent addresses"
-					},
-					"credentials": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Optional metadata-only passthrough; wallet venues are not ccxt-custodied here"
-					}
-				},
-				"required": [
-					"exchange",
-					"credentialType"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyConnectGmxExchangeRequestBody": {
-				"properties": {
-					"exchange": {
-						"type": "string",
-						"enum": [
-							"gmx"
-						],
-						"nullable": false,
-						"description": "Exchange identifier"
-					},
-					"credentialType": {
-						"type": "string",
-						"description": "Credential strategy identifier, e.g. `agent_wallet`"
-					},
-					"metadata": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Exchange-specific metadata such as owner/agent addresses"
-					},
-					"credentials": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Optional metadata-only passthrough; wallet venues are not ccxt-custodied here"
-					}
-				},
-				"required": [
-					"exchange",
-					"credentialType"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyConnectBinanceExchangeRequestBody": {
-				"properties": {
-					"exchange": {
-						"type": "string",
-						"enum": [
-							"binance"
-						],
-						"nullable": false,
-						"description": "Exchange identifier"
-					},
-					"credentialType": {
-						"type": "string",
-						"description": "Credential strategy identifier, e.g. `api_key`"
-					},
-					"metadata": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Optional caller metadata mirrored back on reads"
-					},
-					"credentials": {
-						"properties": {
-							"secret": {
-								"type": "string",
-								"description": "API secret"
-							},
-							"apiKey": {
-								"type": "string",
-								"description": "API key"
-							}
-						},
-						"required": [
-							"secret",
-							"apiKey"
-						],
-						"type": "object",
-						"description": "Binance API credentials"
-					}
-				},
-				"required": [
-					"exchange",
-					"credentialType",
-					"credentials"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyConnectPacificaExchangeRequestBody": {
-				"properties": {
-					"exchange": {
-						"type": "string",
-						"enum": [
-							"pacifica"
-						],
-						"nullable": false,
-						"description": "Exchange identifier"
-					},
-					"credentialType": {
-						"type": "string",
-						"description": "Credential strategy identifier, e.g. `wallet`"
-					},
-					"metadata": {
-						"$ref": "#/components/schemas/JsonObject",
-						"description": "Optional caller metadata mirrored back on reads"
-					},
-					"credentials": {
-						"properties": {
-							"walletAddress": {
-								"type": "string",
-								"description": "Pacifica trading wallet address"
-							},
-							"privateKey": {
-								"type": "string",
-								"description": "Base58 Solana private key"
-							}
-						},
-						"required": [
-							"walletAddress",
-							"privateKey"
-						],
-						"type": "object",
-						"description": "Pacifica trading wallet credentials"
-					}
-				},
-				"required": [
-					"exchange",
-					"credentialType",
-					"credentials"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"ApiKeyConnectExchangeRequestBody": {
-				"anyOf": [
-					{
-						"$ref": "#/components/schemas/ApiKeyConnectHyperliquidExchangeRequestBody"
-					},
-					{
-						"$ref": "#/components/schemas/ApiKeyConnectGmxExchangeRequestBody"
-					},
-					{
-						"$ref": "#/components/schemas/ApiKeyConnectBinanceExchangeRequestBody"
-					},
-					{
-						"$ref": "#/components/schemas/ApiKeyConnectPacificaExchangeRequestBody"
-					}
-				]
-			},
-			"ApiKeyDisconnectExchangeResponse": {
-				"properties": {
-					"success": {
-						"type": "boolean",
-						"enum": [
-							true
-						],
-						"nullable": false,
-						"description": "Whether the disconnect succeeded"
-					}
-				},
-				"required": [
-					"success"
-				],
-				"type": "object",
-				"additionalProperties": false
 			},
 			"Pick_ChatRequestBodyV2.Exclude_keyofChatRequestBodyV2.speed__": {
 				"properties": {
@@ -2549,8 +2257,7 @@
 					"success",
 					"data"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"X402ErrorResponse": {
 				"properties": {
@@ -2561,8 +2268,7 @@
 				"required": [
 					"error"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"AutoChatRequestBody": {
 				"properties": {
@@ -2620,8 +2326,7 @@
 					"credits",
 					"price"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"SimulationLlmCallsEstimate": {
 				"properties": {
@@ -2708,8 +2413,7 @@
 					"conditionCallsBySpeed",
 					"actionCallsBySpeed"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ValidateQueryResponse": {
 				"properties": {
@@ -2759,8 +2463,7 @@
 					"errors",
 					"warnings"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"EqlActionStep": {
 				"properties": {
@@ -2849,8 +2552,7 @@
 					"queryId",
 					"status"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"CreateQueryRequestBody": {
 				"properties": {
@@ -2916,8 +2618,7 @@
 					"matchingConditions",
 					"totalConditions"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"PollQueryExecution": {
 				"$ref": "#/components/schemas/ApiKeyPollQueryExecution"
@@ -2955,8 +2656,7 @@
 					"latestEvaluation",
 					"executions"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"CancelQueryResponse": {
 				"properties": {
@@ -2978,8 +2678,7 @@
 					"status",
 					"cancelledAt"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"SessionSummary": {
 				"properties": {
@@ -3002,8 +2701,7 @@
 					"status",
 					"executedAt"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"ListSessionsResponse": {
 				"properties": {
@@ -3023,8 +2721,7 @@
 					"queryId",
 					"sessions"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"SessionMessage": {
 				"properties": {
@@ -3047,10 +2744,6 @@
 					"timestamp": {
 						"type": "string",
 						"nullable": true
-					},
-					"trades": {
-						"items": {},
-						"type": "array"
 					}
 				},
 				"required": [
@@ -3058,11 +2751,9 @@
 					"response",
 					"status",
 					"analysisType",
-					"timestamp",
-					"trades"
+					"timestamp"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			},
 			"GetSessionResponse": {
 				"properties": {
@@ -3104,8 +2795,7 @@
 					"createdAt",
 					"messages"
 				],
-				"type": "object",
-				"additionalProperties": false
+				"type": "object"
 			}
 		},
 		"securitySchemes": {
@@ -3118,7 +2808,7 @@
 	},
 	"info": {
 		"title": "Elfa Api",
-		"version": "2.0.0",
+		"version": "2.5.0",
 		"description": "API documentation for Elfa"
 	},
 	"paths": {
@@ -4389,7 +4079,8 @@
 											"reasoning": "string",
 											"planIds": [
 												"string"
-											]
+											],
+											"credits": 1
 										}
 									}
 								}
@@ -4427,7 +4118,7 @@
 						}
 					}
 				},
-				"description": "Ask the AI to help you build an EQL query.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n### Cost\n\nAPI mode: `1 + dynamic` credits\n- base request charge: `1` credit\n- dynamic usage charge: `ceil(request_cost * 750)` credits\n\nIn x402 mode, equivalent reference pricing remains:\n- `fast`: `5 credits` (`$0.045`)\n- `expert`: `18 credits` (`$0.162`)\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nThis route does not require HMAC. Chat produces drafts only; any\nsubsequent activation goes through `POST /queries/drafts/{draftId}/convert`,\nwhich gates trade-flavoured drafts behind HMAC.\n\n### Request Example\n\n```json\n{\n  \"message\": \"Alert me when BTC breaks 100k\",\n  \"speed\": \"expert\",\n  \"sessionId\": \"optional-session-id\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I can help with that...\",\n  \"title\": \"BTC Breakout Alert\",\n  \"reasoning\": null,\n  \"planIds\": []\n}\n```\n\n> Best practice: persist `sessionId` and reuse it for follow-up prompts so\n> the model keeps context across turns.",
+				"description": "Ask the AI to help you build an EQL query.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n### Cost\n\nAPI mode: `1 + dynamic` credits\n- base request charge: `1` credit\n- dynamic usage charge: `ceil(request_cost * 750)` credits\n\nIn x402 mode, equivalent reference pricing remains:\n- `fast`: `5 credits` (`$0.045`)\n- `expert`: `18 credits` (`$0.162`)\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nThis route does not require HMAC. Chat produces drafts only; any\nsubsequent activation goes through `POST /queries/drafts/{draftId}/convert`,\nwhich applies the mutation auth rules.\n\n### Request Example\n\n```json\n{\n  \"message\": \"Alert me when BTC breaks 100k\",\n  \"speed\": \"expert\",\n  \"sessionId\": \"optional-session-id\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I can help with that...\",\n  \"title\": \"BTC Breakout Alert\",\n  \"reasoning\": null,\n  \"planIds\": [],\n  \"credits\": 104\n}\n```\n\n`credits` is what this call cost, and carries the same total as the\n`x-elfa-credits` response header. Chat is dynamically priced, so read it\nrather than assuming a flat cost.\n\n> Best practice: persist `sessionId` and reuse it for follow-up prompts so\n> the model keeps context across turns.",
 				"summary": "Builder Chat",
 				"tags": [
 					"v2 Auto"
@@ -4757,7 +4448,7 @@
 						}
 					}
 				},
-				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`.\n\nNew queries cannot use trade actions (`market_order`, `limit_order`) at\ntop-level or in LLM callbacks. Athena returns `EQL_INVALID_ACTION` for\nthose actions. Existing stored trade queries remain readable, cancellable,\nand deletable, and may continue to execute while runtime trade execution\nis enabled.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.045`)\n- fast call: `+5 credits` (`+$0.045`)\n- expert call: `+18 credits` (`+$0.162`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — still required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` whose\n`params.callback.action.type` is `market_order` or `limit_order`), even\nthough Athena validation then rejects new trade plans. HMAC is NOT required\nfor notification-only actions (`notify`, `telegram_bot`, `webhook`, or\n`llm` with a notification callback). Unknown action types default to\nrequiring HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
+				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.045`)\n- fast call: `+5 credits` (`+$0.045`)\n- expert call: `+18 credits` (`+$0.162`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — notification-only actions (`notify`,\n`telegram_bot`, `webhook`, or `llm` with a notification callback) can skip\nHMAC. Unknown or non-notification action shapes require HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
 				"summary": "Create Query",
 				"tags": [
 					"v2 Auto"
@@ -5033,7 +4724,7 @@
 						}
 					}
 				},
-				"description": "Delete a terminal query.\n\nOnly queries in a terminal status (`triggered`, `expired`, `cancelled`,\n`failed`) can be deleted. Active queries must be cancelled first.\nDo not use this endpoint to cancel running queries; use\n`POST /v2/auto/queries/{queryId}/cancel` for active queries.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the *stored* query has a\ntrade-flavoured action (`market_order`, `limit_order`, or `llm` callback to\nthose). NOT required when the stored query is notification-only. If the\nstored query cannot be looked up, HMAC is enforced (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/{queryId}\"` and `body = \"\"`.\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"deletedAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```",
+				"description": "Delete a terminal query.\n\nOnly queries in a terminal status (`triggered`, `expired`, `cancelled`,\n`failed`) can be deleted. Active queries must be cancelled first.\nDo not use this endpoint to cancel running queries; use\n`POST /v2/auto/queries/{queryId}/cancel` for active queries.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — stored notification-only queries can skip HMAC.\nIf the stored query cannot be looked up or is not recognized as\nnotification-only, HMAC is enforced (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/{queryId}\"` and `body = \"\"`.\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"deletedAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```",
 				"summary": "Delete Query",
 				"tags": [
 					"v2 Auto"
@@ -5217,7 +4908,7 @@
 						}
 					}
 				},
-				"description": "Cancel an active query.\n\nOnly queries in `active` status can be cancelled. Queries\nalready in a terminal state return 409 Conflict.\nThis endpoint does not delete query records; use\n`DELETE /v2/auto/queries/{queryId}` after a terminal status when you need\nsoft-delete behavior.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the *stored* query has a\ntrade-flavoured action (`market_order`, `limit_order`, or `llm` callback to\nthose). NOT required when the stored query is notification-only. If the\nstored query cannot be looked up, HMAC is enforced (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/{queryId}/cancel\"` and `body = \"\"`.\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"cancelled\",\n  \"cancelledAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```\n\n> Best practice: keep cancellation idempotent in your client workflow;\n> treat repeated cancel attempts as safe no-op behavior.",
+				"description": "Cancel an active query.\n\nOnly queries in `active` status can be cancelled. Queries\nalready in a terminal state return 409 Conflict.\nThis endpoint does not delete query records; use\n`DELETE /v2/auto/queries/{queryId}` after a terminal status when you need\nsoft-delete behavior.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — stored notification-only queries can skip HMAC.\nIf the stored query cannot be looked up or is not recognized as\nnotification-only, HMAC is enforced (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/{queryId}/cancel\"` and `body = \"\"`.\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"cancelled\",\n  \"cancelledAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```\n\n> Best practice: keep cancellation idempotent in your client workflow;\n> treat repeated cancel attempts as safe no-op behavior.",
 				"summary": "Cancel Query",
 				"tags": [
 					"v2 Auto"
@@ -5355,7 +5046,7 @@
 						}
 					}
 				},
-				"description": "Get full LLM analysis output for a specific session.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\nPath parameters:\n- `queryId` (string)\n- `sessionId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"s_1\",\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"title\": \"Token analysis\",\n  \"analysisType\": \"tokenAnalysis\",\n  \"createdAt\": \"2026-04-01T12:00:00.000Z\",\n  \"messages\": [\n    {\n      \"query\": \"Analyze BTC\",\n      \"response\": \"...\",\n      \"status\": \"completed\",\n      \"analysisType\": \"tokenAnalysis\",\n      \"timestamp\": \"2026-04-01T12:00:00.000Z\",\n      \"trades\": []\n    }\n  ]\n}\n```\n\n> Best practice: treat top-level and message-level fields as nullable and\n> handle partial records defensively in your parser.",
+				"description": "Get full LLM analysis output for a specific session.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\nPath parameters:\n- `queryId` (string)\n- `sessionId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"s_1\",\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"title\": \"Token analysis\",\n  \"analysisType\": \"tokenAnalysis\",\n  \"createdAt\": \"2026-04-01T12:00:00.000Z\",\n  \"messages\": [\n    {\n      \"query\": \"Analyze BTC\",\n      \"response\": \"...\",\n      \"status\": \"completed\",\n      \"analysisType\": \"tokenAnalysis\",\n      \"timestamp\": \"2026-04-01T12:00:00.000Z\"\n    }\n  ]\n}\n```\n\n> Best practice: treat top-level and message-level fields as nullable and\n> handle partial records defensively in your parser.",
 				"summary": "LLM Session Details",
 				"tags": [
 					"v2 Auto"
@@ -5509,7 +5200,7 @@
 						}
 					}
 				},
-				"description": "Create or update a query draft.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — still required when the request body's action is\ntrade-flavoured (`market_order`, `limit_order`, or `llm` callback to\nthose), even though Athena validation then rejects new trade drafts. NOT\nrequired for notification-only actions. The gate remains fail-safe for\ntrade-shaped bodies.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts\"`.",
+				"description": "Create or update a query draft.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — notification-only draft bodies can skip HMAC.\nUnknown or non-notification action shapes require HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts\"`.",
 				"summary": "Upsert Query Draft",
 				"tags": [
 					"v2 Auto"
@@ -5837,7 +5528,7 @@
 						}
 					}
 				},
-				"description": "Convert a draft into an active query.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — required when the *stored* draft has a\ntrade-flavoured action (`market_order`, `limit_order`, or `llm` callback\nto those). NOT required when the draft is notification-only. If the draft\nis missing or not owned by this API key, the request proceeds and the\ncontroller returns 404. Other lookup failures fall back to HMAC\nenforcement (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts/{draftId}/convert\"` and `body = \"\"`.",
+				"description": "Convert a draft into an active query.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — stored notification-only drafts can skip HMAC.\nIf the draft is missing or not owned by this API key, the request proceeds\nand the controller returns 404. Other lookup failures or non-notification\naction shapes fall back to HMAC enforcement (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts/{draftId}/convert\"` and `body = \"\"`.",
 				"summary": "Convert Query Draft",
 				"tags": [
 					"v2 Auto"
@@ -6034,235 +5725,6 @@
 						"required": true,
 						"schema": {
 							"type": "string"
-						}
-					}
-				]
-			}
-		},
-		"/v2/auto/exchanges": {
-			"get": {
-				"operationId": "auto-list-exchanges-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyListExchangesResponse"
-								},
-								"examples": {
-									"Example 1": {
-										"value": {
-											"connections": [
-												{
-													"id": 42,
-													"exchange": "binance",
-													"credentialType": "api_key",
-													"metadata": {},
-													"isActive": true,
-													"createdAt": "2026-04-01T12:00:00.000Z",
-													"updatedAt": "2026-04-01T12:00:00.000Z"
-												}
-											]
-										}
-									}
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid API key",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyAutoErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "List connected exchanges.\n\nReturns the active venue connections for the Auto-linked user. This is the\npreflight check to run before creating a trade-action query.",
-				"summary": "List Exchanges",
-				"tags": [
-					"v2 Auto"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": []
-			},
-			"post": {
-				"operationId": "auto-connect-exchange-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyConnectExchangeResponse"
-								},
-								"examples": {
-									"Example 1": {
-										"value": {
-											"id": 43,
-											"exchange": "pacifica",
-											"credentialType": "wallet",
-											"metadata": {
-												"walletAddress": "7dDGpxgjj3j7TRTJQ2qpeqDJvVnikb3exiVjarY4pQS1"
-											},
-											"isActive": true,
-											"createdAt": "2026-04-01T12:05:00.000Z",
-											"updatedAt": "2026-04-01T12:05:00.000Z"
-										}
-									}
-								}
-							}
-						}
-					},
-					"201": {
-						"description": "Exchange connected",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyConnectExchangeResponse"
-								},
-								"examples": {
-									"success": {
-										"summary": "Example successful response",
-										"value": {
-											"exchange": "hyperliquid",
-											"credentialType": "string",
-											"metadata": {
-												"key": {}
-											},
-											"isActive": true,
-											"id": 1,
-											"createdAt": "string",
-											"updatedAt": "string"
-										}
-									}
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Missing or invalid parameters",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyAutoErrorResponse"
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyAutoErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Connect an exchange integration.\n\nRequires HMAC request signing and an Auto-linked user.\n\nSupported payload shapes:\n- `hyperliquid` / `gmx`: metadata-driven wallet connections used by the\n  existing app onboarding flow. This route keeps accepting those payloads.\n- `binance`: `credentials.apiKey` + `credentials.secret`\n- `pacifica`: `credentials.privateKey` + `credentials.walletAddress`\n\nBinance and Pacifica credentials are verified with the venue before the\nconnection is stored.\n\n### Request Examples\n\nBinance:\n```json\n{\n  \"exchange\": \"binance\",\n  \"credentialType\": \"api_key\",\n  \"credentials\": {\n    \"apiKey\": \"binance_api_key\",\n    \"secret\": \"binance_api_secret\"\n  }\n}\n```\n\nPacifica:\n```json\n{\n  \"exchange\": \"pacifica\",\n  \"credentialType\": \"wallet\",\n  \"credentials\": {\n    \"privateKey\": \"base58_private_key\",\n    \"walletAddress\": \"7dDGpxgjj3j7TRTJQ2qpeqDJvVnikb3exiVjarY4pQS1\"\n  }\n}\n```",
-				"summary": "Connect Exchange",
-				"tags": [
-					"v2 Auto"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ApiKeyConnectExchangeRequestBody"
-							},
-							"examples": {
-								"default": {
-									"summary": "Example request",
-									"value": {
-										"exchange": "hyperliquid",
-										"credentialType": "agent_wallet",
-										"metadata": {
-											"masterAddress": "0x1111111111111111111111111111111111111111",
-											"agentAddress": "0x2222222222222222222222222222222222222222"
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/v2/auto/exchanges/{exchange}": {
-			"delete": {
-				"operationId": "auto-disconnect-exchange-v2",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyDisconnectExchangeResponse"
-								},
-								"examples": {
-									"Example 1": {
-										"value": {
-											"success": true
-										}
-									}
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Missing or invalid authentication",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyAutoErrorResponse"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Exchange connection not found",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ApiKeyAutoErrorResponse"
-								}
-							}
-						}
-					}
-				},
-				"description": "Disconnect an exchange integration.\n\nRequires HMAC request signing.",
-				"summary": "Disconnect Exchange",
-				"tags": [
-					"v2 Auto"
-				],
-				"security": [
-					{
-						"api_key": []
-					}
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "exchange",
-						"required": true,
-						"schema": {
-							"$ref": "#/components/schemas/ApiKeyAutoExchange"
 						}
 					}
 				]
@@ -7552,7 +7014,7 @@
 						"description": "EQL validation failed"
 					}
 				},
-				"description": "Create and activate a conditional query that monitors market data and triggers actions when conditions are met.\n\n**Allowed action types:** `webhook`, `notify`, `telegram_bot`, `llm`.\nTrade execution is not available via x402.\n\n**Cost:** Dynamic. Base fee is 5 credits ($0.045) plus simulated LLM calls:\nfast = +5 credits (+$0.045) per call, expert = +18 credits (+$0.162) per call.\nUse the validate endpoint to preview costs.\nRequires `x-elfa-agent-secret` header.\nRequires x402 payment.",
+				"description": "Create and activate a conditional query that monitors market data and triggers actions when conditions are met.\n\n**Allowed action types:** `webhook`, `notify`, `telegram_bot`, `llm`.\n\n**Cost:** Dynamic. Base fee is 5 credits ($0.045) plus simulated LLM calls:\nfast = +5 credits (+$0.045) per call, expert = +18 credits (+$0.162) per call.\nUse the validate endpoint to preview costs.\nRequires `x-elfa-agent-secret` header.\nRequires x402 payment.",
 				"summary": "Create Query",
 				"tags": [
 					"x402 Auto"
@@ -7889,10 +7351,7 @@
 													"response": "string",
 													"status": "string",
 													"analysisType": "string",
-													"timestamp": "string",
-													"trades": [
-														{}
-													]
+													"timestamp": "string"
 												}
 											]
 										}
@@ -7922,7 +7381,7 @@
 						}
 					}
 				},
-				"description": "Get full LLM analysis output for a specific session, including conversation messages and any trade signals.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
+				"description": "Get full LLM analysis output for a specific session, including conversation messages and analysis details.\nRequires `x-elfa-agent-secret` header.\n\n**Cost:** Free",
 				"summary": "LLM Session Details",
 				"tags": [
 					"x402 Auto"
@@ -8058,7 +7517,7 @@
 		},
 		{
 			"name": "v2 Auto",
-			"description": "Conditional query builder and runner: create, validate, poll, and stream EQL queries, and manage LLM sessions.\n\n**Required Sequence (Enforced)**\n1. `POST /v2/auto/queries/validate`\n2. `POST /v2/auto/queries`\n3. `POST /v2/auto/queries/{queryId}/cancel` (only while status is `active`)\n4. `DELETE /v2/auto/queries/{queryId}` (only after status is terminal: `triggered`, `expired`, `cancelled`, `failed`)\n\nIf actions include `market_order` or `limit_order`, preflight `GET /v2/auto/exchanges` before create.\n\n**Intent Routing (Strict)**\n\n| User intent | Required source | Required fields |\n| --- | --- | --- |\n| Account-anchored post intent (`@user posted ...`) | `source: \"tweet\"` | `args.username` (no `@`), `args.text`, `args.minConfidence` (start at `80`) |\n| World event intent (`ETF approved`, exploit, sanctions) | `source: \"news\"` | `args.text`, `args.minConfidence` (start at `80`) |\n| Fuzzy world-state predicate not naturally post/event matching | `source: \"llm\"` | `method: \"athena_condition\"`, `args.query`, `args.period` (`>= 1h`) |"
+			"description": "Conditional query builder and runner: create, validate, poll, and stream EQL queries, and manage LLM sessions.\n\n**Required Sequence (Enforced)**\n1. `POST /v2/auto/queries/validate`\n2. `POST /v2/auto/queries`\n3. `POST /v2/auto/queries/{queryId}/cancel` (only while status is `active`)\n4. `DELETE /v2/auto/queries/{queryId}` (only after status is terminal: `triggered`, `expired`, `cancelled`, `failed`)\n\n**Intent Routing (Strict)**\n\n| User intent | Required source | Required fields |\n| --- | --- | --- |\n| Account-anchored post intent (`@user posted ...`) | `source: \"tweet\"` | `args.username` (no `@`), `args.text`, `args.minConfidence` (start at `80`) |\n| World event intent (`ETF approved`, exploit, sanctions) | `source: \"news\"` | `args.text`, `args.minConfidence` (start at `80`) |\n| Fuzzy world-state predicate not naturally post/event matching | `source: \"llm\"` | `method: \"athena_condition\"`, `args.query`, `args.period` (`>= 1h`) |"
 		},
 		{
 			"name": "x402 Account",
@@ -8079,10 +7538,6 @@
 		{
 			"name": "x402 Auto",
 			"description": "Pay-per-request conditional query builder and runner (x402)."
-		},
-		{
-			"name": "v1",
-			"description": "API v1 endpoints (legacy)."
 		}
 	],
 	"tryItOutEnabled": true,
@@ -8110,12 +7565,6 @@
 				"x402 Data",
 				"x402 Chat",
 				"x402 Auto"
-			]
-		},
-		{
-			"name": "API v1 (Legacy)",
-			"tags": [
-				"v1"
 			]
 		}
 	]
