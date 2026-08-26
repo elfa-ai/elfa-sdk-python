@@ -192,10 +192,6 @@
 							}
 						]
 					},
-					"hmacEnabled": {
-						"type": "boolean",
-						"description": "Whether Auto (`/v2/auto/*`) trade actions require an HMAC signature."
-					},
 					"athenaEnabled": {
 						"type": "boolean",
 						"description": "Whether this key is provisioned for Auto / Athena."
@@ -301,7 +297,6 @@
 					"spendAlertThreshold",
 					"spendAlertMaxFrequencyHours",
 					"totalSpendAlerted",
-					"hmacEnabled",
 					"athenaEnabled",
 					"scopes",
 					"tier",
@@ -1416,7 +1411,7 @@
 							"true",
 							"false"
 						],
-						"description": "Whether the symbol is tradable as a perpetual on the given exchange"
+						"description": "Whether the symbol is supported by the price/TA data source"
 					}
 				},
 				"required": [
@@ -2808,7 +2803,7 @@
 	},
 	"info": {
 		"title": "Elfa Api",
-		"version": "2.6.1",
+		"version": "2.6.3",
 		"description": "API documentation for Elfa"
 	},
 	"paths": {
@@ -2888,7 +2883,6 @@
 												"spendAlertThreshold": "string",
 												"spendAlertMaxFrequencyHours": 1,
 												"totalSpendAlerted": "string",
-												"hmacEnabled": true,
 												"athenaEnabled": true,
 												"scopes": [
 													"string"
@@ -4142,7 +4136,7 @@
 						}
 					}
 				},
-				"description": "Ask the AI to help you build an EQL query.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n### Cost\n\nAPI mode: `1 + dynamic` credits\n- base request charge: `1` credit\n- dynamic usage charge: `ceil(request_cost * 750)` credits\n\nIn x402 mode, equivalent reference pricing remains:\n- `fast`: `5 credits` (`$0.0725`)\n- `expert`: `18 credits` (`$0.261`)\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nThis route does not require HMAC. Chat produces drafts only; any\nsubsequent activation goes through `POST /queries/drafts/{draftId}/convert`,\nwhich applies the mutation auth rules.\n\n### Request Example\n\n```json\n{\n  \"message\": \"Alert me when BTC breaks 100k\",\n  \"speed\": \"expert\",\n  \"sessionId\": \"optional-session-id\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I can help with that...\",\n  \"title\": \"BTC Breakout Alert\",\n  \"reasoning\": null,\n  \"planIds\": [],\n  \"credits\": 104\n}\n```\n\n`credits` is what this call cost, and carries the same total as the\n`x-elfa-credits` response header. Chat is dynamically priced, so read it\nrather than assuming a flat cost.\n\n> Best practice: persist `sessionId` and reuse it for follow-up prompts so\n> the model keeps context across turns.",
+				"description": "Ask the AI to help you build an EQL query.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n### Cost\n\nAPI mode: `1 + dynamic` credits\n- base request charge: `1` credit\n- dynamic usage charge: `ceil(request_cost * 750)` credits\n\nIn x402 mode, equivalent reference pricing remains:\n- `fast`: `5 credits` (`$0.0725`)\n- `expert`: `18 credits` (`$0.261`)\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nChat produces drafts only; subsequent activation goes through\n`POST /queries/drafts/{draftId}/convert`.\n\n### Request Example\n\n```json\n{\n  \"message\": \"Alert me when BTC breaks 100k\",\n  \"speed\": \"expert\",\n  \"sessionId\": \"optional-session-id\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I can help with that...\",\n  \"title\": \"BTC Breakout Alert\",\n  \"reasoning\": null,\n  \"planIds\": [],\n  \"credits\": 104\n}\n```\n\n`credits` is what this call cost, and carries the same total as the\n`x-elfa-credits` response header. Chat is dynamically priced, so read it\nrather than assuming a flat cost.\n\n> Best practice: persist `sessionId` and reuse it for follow-up prompts so\n> the model keeps context across turns.",
 				"summary": "Builder Chat",
 				"tags": [
 					"v2 Auto"
@@ -4227,7 +4221,7 @@
 						}
 					}
 				},
-				"description": "Check whether a symbol is supported on the given exchange.\n\nUse this before submitting an EQL query based on symbols like `price` / `ta`\ntriggers. Symbols not supported return `\"false\"`.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nHMAC signing is not required for this check.\n\n### Response Example (200)\n\n```json\n{\n  \"supported\": \"true\"\n}\n```",
+				"description": "Check whether a symbol is supported on the given exchange.\n\nUse this before submitting an EQL query based on symbols like `price` / `ta`\ntriggers. Symbols not supported return `\"false\"`.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Response Example (200)\n\n```json\n{\n  \"supported\": \"true\"\n}\n```",
 				"summary": "Validate Symbol",
 				"tags": [
 					"v2 Auto"
@@ -4239,7 +4233,7 @@
 				],
 				"parameters": [
 					{
-						"description": "Exchange to check support on: `hyperliquid`, `gmx`, `binance`, or `pacifica`.",
+						"description": "Exchange to check support on: `hyperliquid`, `gmx`, or `binance`.",
 						"in": "path",
 						"name": "exchange",
 						"required": true,
@@ -4248,8 +4242,7 @@
 							"enum": [
 								"hyperliquid",
 								"gmx",
-								"binance",
-								"pacifica"
+								"binance"
 							]
 						}
 					},
@@ -4324,7 +4317,7 @@
 						}
 					}
 				},
-				"description": "Validate EQL syntax and get a cost estimate without creating a query.\nReturns simulation-based cost details when the query is valid.\n\n### Required Sequence (Enforced)\n\n`POST /v2/auto/queries/validate` must be called before\n`POST /v2/auto/queries`.\n\nLifecycle sequencing after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is\n   `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only after status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nHMAC signing is not required for validate.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k so I can review the breakout setup.\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"valid\": true,\n  \"errors\": [],\n  \"warnings\": [],\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": { \"fast\": 1, \"expert\": 0, \"adaptive\": 0 },\n    \"actionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 },\n    \"autoActionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 }\n  },\n  \"estimatedCost\": {\n    \"credits\": 30,\n    \"price\": \"$0.270\"\n  }\n}\n```\n\n> Best practice: always validate before create to catch schema issues and\n> preview estimated cost.",
+				"description": "Validate EQL syntax and get a cost estimate without creating a query.\nReturns simulation-based cost details when the query is valid.\n\n### Required Sequence (Enforced)\n\n`POST /v2/auto/queries/validate` must be called before\n`POST /v2/auto/queries`.\n\nLifecycle sequencing after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is\n   `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only after status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k so I can review the breakout setup.\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"valid\": true,\n  \"errors\": [],\n  \"warnings\": [],\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": { \"fast\": 1, \"expert\": 0, \"adaptive\": 0 },\n    \"actionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 },\n    \"autoActionCallsBySpeed\": { \"fast\": 0, \"expert\": 0, \"adaptive\": 0 }\n  },\n  \"estimatedCost\": {\n    \"credits\": 30,\n    \"price\": \"$0.270\"\n  }\n}\n```\n\n> Best practice: always validate before create to catch schema issues and\n> preview estimated cost.",
 				"summary": "Validate Query",
 				"tags": [
 					"v2 Auto"
@@ -4472,7 +4465,7 @@
 						}
 					}
 				},
-				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.0725`)\n- fast call: `+5 credits` (`+$0.0725`)\n- expert call: `+18 credits` (`+$0.261`)\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — notification-only actions (`notify`,\n`telegram_bot`, `webhook`, or `llm` with a notification callback) can skip\nHMAC. Unknown or non-notification action shapes require HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries\"`. Always-signing clients are supported — HMAC sent\non a notification-only request is accepted.\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
+				"description": "Create and activate a conditional query.\n\n### Required Sequence (Enforced)\n\nCall `POST /v2/auto/queries/validate` immediately before create.\n\nLifecycle after create:\n1. `POST /v2/auto/queries/{queryId}/cancel` while status is `active`.\n2. `DELETE /v2/auto/queries/{queryId}` only when status is terminal\n   (`triggered`, `expired`, `cancelled`, `failed`).\n\n**Allowed action types (API key mode):**\n`webhook`, `notify`, `telegram_bot`, `llm`.\n\n### Cost\n\nSimulation-driven estimate (reference values):\n- baseline: `5 credits` (`$0.0725`)\n- fast call: `+5 credits` (`+$0.0725`)\n- expert call: `+18 credits` (`+$0.261`)\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\n```json\n{\n  \"query\": {\n    \"conditions\": {\n      \"AND\": [\n        {\n          \"source\": \"price\",\n          \"method\": \"current\",\n          \"args\": { \"symbol\": \"BTC\" },\n          \"operator\": \">\",\n          \"value\": 100000\n        }\n      ]\n    },\n    \"actions\": [\n      {\n        \"stepId\": \"step_1\",\n        \"type\": \"notify\",\n        \"params\": { \"message\": \"BTC crossed target\" }\n      }\n    ],\n    \"expiresIn\": \"24h\"\n  },\n  \"title\": \"BTC breakout alert\",\n  \"description\": \"Notify when BTC is above 100k\"\n}\n```\n\n### Response Example (201)\n\n```json\n{\n  \"queryId\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"active\",\n  \"estimatedCredits\": 116,\n  \"simulationLlmCallsEstimate\": {\n    \"conditionCallsUpperBound\": 1,\n    \"actionCallsUpperBound\": 0,\n    \"conditionCallsBySpeed\": {\"fast\": 1, \"expert\": 0, \"adaptive\": 0},\n    \"actionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0},\n    \"autoActionCallsBySpeed\": {\"fast\": 0, \"expert\": 0, \"adaptive\": 0}\n  }\n}\n```\n\n> Best practice: call validate first, then create. After creation, wire\n> notifications (`webhook`, `telegram_bot`, or SSE) to a background runner.",
 				"summary": "Create Query",
 				"tags": [
 					"v2 Auto"
@@ -4748,7 +4741,7 @@
 						}
 					}
 				},
-				"description": "Delete a terminal query.\n\nOnly queries in a terminal status (`triggered`, `expired`, `cancelled`,\n`failed`) can be deleted. Active queries must be cancelled first.\nDo not use this endpoint to cancel running queries; use\n`POST /v2/auto/queries/{queryId}/cancel` for active queries.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — stored notification-only queries can skip HMAC.\nIf the stored query cannot be looked up or is not recognized as\nnotification-only, HMAC is enforced (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/{queryId}\"` and `body = \"\"`.\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"deletedAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```",
+				"description": "Delete a terminal query.\n\nOnly queries in a terminal status (`triggered`, `expired`, `cancelled`,\n`failed`) can be deleted. Active queries must be cancelled first.\nDo not use this endpoint to cancel running queries; use\n`POST /v2/auto/queries/{queryId}/cancel` for active queries.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"deletedAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```",
 				"summary": "Delete Query",
 				"tags": [
 					"v2 Auto"
@@ -4932,7 +4925,7 @@
 						}
 					}
 				},
-				"description": "Cancel an active query.\n\nOnly queries in `active` status can be cancelled. Queries\nalready in a terminal state return 409 Conflict.\nThis endpoint does not delete query records; use\n`DELETE /v2/auto/queries/{queryId}` after a terminal status when you need\nsoft-delete behavior.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — stored notification-only queries can skip HMAC.\nIf the stored query cannot be looked up or is not recognized as\nnotification-only, HMAC is enforced (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/{queryId}/cancel\"` and `body = \"\"`.\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"cancelled\",\n  \"cancelledAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```\n\n> Best practice: keep cancellation idempotent in your client workflow;\n> treat repeated cancel attempts as safe no-op behavior.",
+				"description": "Cancel an active query.\n\nOnly queries in `active` status can be cancelled. Queries\nalready in a terminal state return 409 Conflict.\nThis endpoint does not delete query records; use\n`DELETE /v2/auto/queries/{queryId}` after a terminal status when you need\nsoft-delete behavior.\n\n### Cost\n\nFree.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\n### Request Example\n\nPath parameter:\n- `queryId` (string)\n\n### Response Example (200)\n\n```json\n{\n  \"id\": \"a12d20ff-6cb2-433e-afed-cc2e6a0380b6\",\n  \"status\": \"cancelled\",\n  \"cancelledAt\": \"2026-04-01T12:00:00.000Z\"\n}\n```\n\n> Best practice: keep cancellation idempotent in your client workflow;\n> treat repeated cancel attempts as safe no-op behavior.",
 				"summary": "Cancel Query",
 				"tags": [
 					"v2 Auto"
@@ -5224,7 +5217,7 @@
 						}
 					}
 				},
-				"description": "Create or update a query draft.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — notification-only draft bodies can skip HMAC.\nUnknown or non-notification action shapes require HMAC.\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts\"`.",
+				"description": "Create or update a query draft.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```",
 				"summary": "Upsert Query Draft",
 				"tags": [
 					"v2 Auto"
@@ -5552,7 +5545,7 @@
 						}
 					}
 				},
-				"description": "Convert a draft into an active query.\n\n### Auth\n\nRequired header (always):\n```http\nx-elfa-api-key: <api_key>\n```\n\n**HMAC is conditional** — stored notification-only drafts can skip HMAC.\nIf the draft is missing or not owned by this API key, the request proceeds\nand the controller returns 404. Other lookup failures or non-notification\naction shapes fall back to HMAC enforcement (fail-safe).\n\nWhen HMAC is required, also send:\n```http\nx-elfa-timestamp: <unix_seconds>\nx-elfa-signature: <hex_hmac_sha256>\n```\n\nSigning payload: `timestamp + method + path + body`. For this route, sign\nwith `path = \"/queries/drafts/{draftId}/convert\"` and `body = \"\"`.",
+				"description": "Convert a draft into an active query.\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```",
 				"summary": "Convert Query Draft",
 				"tags": [
 					"v2 Auto"
@@ -7095,7 +7088,7 @@
 											"expiresIn": "24h"
 										},
 										"title": "SOL breakout alert",
-										"description": "Send a Telegram alert if SOL trades above 220."
+										"description": "Send a Telegram alert if SOL moves above 220."
 									}
 								}
 							}
