@@ -49,7 +49,7 @@ For raw content, call the X (Twitter) API directly with those links/ids.
 - **Async Client**: `AsyncElfaClient` - async mirror of `ElfaClient`
 - **Auto engine**: `AutoClient` / `AsyncAutoClient` (`/v2/auto/*`) - EQL queries, drafts, sessions, executions, SSE streams
 - **Transport**: `SyncTransport` / `AsyncTransport` (retries, error mapping, SSE)
-- **Signing**: Auto mutations are HMAC-signed when `hmac_secret` is set. Sign `timestamp+METHOD+mounted_path+body`; the body must be the exact compact-JSON bytes sent (httpx `content=`, never `json=`).
+- **Bodies**: Auto mutations send compact JSON via httpx `content=`, never `json=`.
 
 ### Error Handling Pattern
 ```python
@@ -120,7 +120,7 @@ elfa/
 │   ├── elfa_client.py   # Sync data + chat client (.auto)
 │   ├── async_client.py  # Async mirror
 │   ├── auto_client.py   # AutoClient / AsyncAutoClient
-│   ├── base.py          # SignedClient + parse helpers
+│   ├── base.py          # MountedClient + parse helpers
 │   └── _params.py       # shared data param builders
 ├── models/              # Pydantic data models
 ├── exceptions/          # Custom exceptions

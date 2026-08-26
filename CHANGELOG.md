@@ -9,6 +9,38 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## 6.0.0
+
+### Removed
+
+- **HMAC request signing has been removed.** The `hmac_secret` argument is gone
+  from `ElfaClient`, `AsyncElfaClient`, `AutoClient` and `AsyncAutoClient`, and
+  `elfa.utils.sign_request` no longer exists. `/v2/auto/*` routes are no longer
+  documented as taking `x-elfa-timestamp` or `x-elfa-signature`; the API key
+  alone authenticates every route, including mutations.
+
+  **Migration:** drop `hmac_secret=` from your client construction. Nothing
+  replaces it. Passing it now raises `TypeError`, and the header was already
+  redundant on every documented action type.
+
+  Request bodies are unchanged: Auto mutations still send compact JSON through
+  httpx `content=`, so the bytes on the wire are the same minus the two headers.
+
+- **`"pacifica"` is no longer a `TradableExchange`.** The published
+  `GET /v2/auto/validate-symbol/{exchange}/{symbol}` enum is now
+  `hyperliquid | gmx | binance`. Passing `"pacifica"` to `validate_symbol` now
+  fails type checking; it would have been rejected by the API regardless.
+
+### Changed
+
+- Internal: `SignedClient` is now `MountedClient`, since all it does is join the
+  mount prefix to the path. It was never exported from `elfa`.
+- `swagger.json` refreshed to API `2.6.3`. A credit is now $0.0145, so the x402
+  reference prices in the spec move to $0.0145 (1 credit), $0.0725 (5 credits)
+  and $0.261 (18 credits). Accounts already on PAYG keep $0.009 per credit until
+  28 September 2026, 16:00 UTC. Pricing affects documentation strings only — no
+  signature changes.
+
 ## 5.1.0
 
 ### Added

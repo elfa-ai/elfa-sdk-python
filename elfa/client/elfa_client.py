@@ -39,8 +39,6 @@ class ElfaClient:
         timeout: Per-request timeout in seconds.
         retries: Retries for idempotent (GET) requests.
         retry_delay: Base delay for exponential backoff.
-        hmac_secret: Secret for signing Auto mutations. Required for mutations
-            that are not plain notifications; optional otherwise.
         headers: Extra headers sent on every request.
 
     Example:
@@ -58,7 +56,6 @@ class ElfaClient:
         timeout: float = 30.0,
         retries: int = 3,
         retry_delay: float = 1.0,
-        hmac_secret: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
     ):
         if not api_key:
@@ -67,7 +64,7 @@ class ElfaClient:
         self._transport = SyncTransport(
             api_key, base_url, timeout, retries, retry_delay, headers
         )
-        self.auto = AutoClient(transport=self._transport, hmac_secret=hmac_secret)
+        self.auto = AutoClient(transport=self._transport)
 
     def __enter__(self) -> "ElfaClient":
         return self

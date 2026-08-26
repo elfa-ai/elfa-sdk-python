@@ -11,7 +11,7 @@ from typing_extensions import Literal
 
 from elfa.models.base import ElfaModel
 
-TradableExchange = Literal["hyperliquid", "gmx", "binance", "pacifica"]
+TradableExchange = Literal["hyperliquid", "gmx", "binance"]
 AutoSpeed = Literal["fast", "expert", "adaptive"]
 
 

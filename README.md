@@ -13,7 +13,7 @@ Official Python SDK for the Elfa API v2 — social intelligence, AI chat, and th
 - **Auto condition engine** — build EQL queries that watch markets and notify via `client.auto`
 - **Sync and async** — `ElfaClient` and `AsyncElfaClient`, same surface
 - **Typed** — Pydantic v2 models, full type hints
-- **Robust** — retries with backoff, typed errors, HMAC request signing
+- **Robust** — retries with backoff, typed errors
 
 > The SDK returns processed metadata and tweet links only — never raw tweet content. For raw tweets, call the X (Twitter) API directly using the returned links/ids.
 
@@ -67,7 +67,6 @@ client = ElfaClient(
     timeout=30.0,                    # per-request timeout, seconds
     retries=3,                       # retries for idempotent (GET) requests
     retry_delay=1.0,                 # base delay for exponential backoff
-    hmac_secret=None,                # required for Auto mutations that are not plain notifications (see below)
     headers=None,                    # extra headers sent on every request
 )
 
@@ -80,7 +79,7 @@ The Auto engine is also constructable standalone if that is all you need:
 ```python
 from elfa import AutoClient
 
-auto = AutoClient(api_key="your-api-key", hmac_secret="your-hmac-secret")
+auto = AutoClient(api_key="your-api-key")
 auto.close()
 ```
 
@@ -135,7 +134,7 @@ Event types are `session_info`, `title`, `text`, `text_complete`, `status`, `cre
 
 ## Auto condition engine (`client.auto`)
 
-Build [EQL](https://docs.elfa.ai) queries that watch conditions and fire actions (`notify`, `webhook`, `telegram_bot`, `llm`). Notification-only queries need no secret; any other mutation shape requires an `hmac_secret`.
+Build [EQL](https://docs.elfa.ai) queries that watch conditions and fire actions (`notify`, `webhook`, `telegram_bot`, `llm`). Every route authenticates with the API key alone.
 
 ```python
 query = {
@@ -190,10 +189,6 @@ async for event in async_client.auto.stream_all():
     print(event.event, event.data)
 ```
 
-## HMAC signing
-
-Auto mutations are signed when `hmac_secret` is set. The SDK builds the signature over `timestamp + METHOD + mounted_path + body` and sends `x-elfa-timestamp` and `x-elfa-signature` headers. Signing every mutation is safe, so passing `hmac_secret` is always fine. Generate a secret in the [dev portal](https://dev.elfa.ai).
-
 ## Error handling
 
 ```python
@@ -232,7 +227,7 @@ make check   # flake8 + mypy + pytest
 make format  # black + isort
 ```
 
-Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`, `ELFA_HMAC_SECRET`); otherwise they skip.
+Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip.
 
 ## Support
 
