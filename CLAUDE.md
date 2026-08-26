@@ -65,7 +65,7 @@ When exploring the codebase, reference components by their file paths:
 - Follow existing client method patterns for consistency
 - Go through the transport (`self._transport.request_json(...)`) and `parse_model(...)`
 - Add data param mapping to `elfa/client/_params.py`, not inline
-- For Auto mutations, sign via `SignedClient` and send compact bytes (`content=`)
+- For Auto mutations, go through `MountedClient` and send compact bytes (`content=`)
 
 ### Testing Approach
 - Create both sync and async test variants for new client methods

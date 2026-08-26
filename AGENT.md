@@ -120,7 +120,7 @@ elfa/
 │   ├── elfa_client.py   # Sync data + chat client (.auto)
 │   ├── async_client.py  # Async mirror
 │   ├── auto_client.py   # AutoClient / AsyncAutoClient
-│   ├── base.py          # SignedClient + parse helpers
+│   ├── base.py          # MountedClient + parse helpers
 │   └── _params.py       # shared data param builders
 ├── models/              # Pydantic data models
 ├── exceptions/          # Custom exceptions
