@@ -56,7 +56,7 @@ When exploring the codebase, reference components by their file paths:
 - `elfa/client/async_client.py` - `AsyncElfaClient`
 - `elfa/client/auto_client.py` - Auto engine
 - `elfa/client/_params.py` - shared data param builders
-- `elfa/utils/{http,hmac,sse}.py` - transport, signing, SSE
+- `elfa/utils/{http,sse}.py` - transport, SSE
 - `elfa/models/__init__.py` - All available Pydantic models
 - `elfa/exceptions/__init__.py` - Exception hierarchy
 

@@ -1,7 +1,7 @@
 """Gated live integration tests against a real Elfa API.
 
 Skipped unless ``ELFA_API_KEY`` is set. Optional env:
-``ELFA_BASE_URL``, ``ELFA_HMAC_SECRET``, ``ELFA_STAGING_SECRET``, and
+``ELFA_BASE_URL``, ``ELFA_STAGING_SECRET``, and
 ``ELFA_CHAT_STREAM=1`` to exercise chat streaming on a PAYG or Enterprise key.
 """
 
@@ -13,7 +13,6 @@ from elfa import ElfaClient
 
 API_KEY = os.environ.get("ELFA_API_KEY")
 BASE_URL = os.environ.get("ELFA_BASE_URL")
-HMAC_SECRET = os.environ.get("ELFA_HMAC_SECRET")
 STAGING_SECRET = os.environ.get("ELFA_STAGING_SECRET")
 
 pytestmark = pytest.mark.skipif(not API_KEY, reason="ELFA_API_KEY not set")
@@ -45,8 +44,6 @@ def client():
     kwargs = {"api_key": API_KEY}
     if BASE_URL:
         kwargs["base_url"] = BASE_URL
-    if HMAC_SECRET:
-        kwargs["hmac_secret"] = HMAC_SECRET
     if STAGING_SECRET:
         kwargs["headers"] = {"x-staging-secret": STAGING_SECRET}
     instance = ElfaClient(**kwargs)

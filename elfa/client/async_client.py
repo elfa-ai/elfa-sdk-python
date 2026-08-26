@@ -50,7 +50,6 @@ class AsyncElfaClient:
         timeout: float = 30.0,
         retries: int = 3,
         retry_delay: float = 1.0,
-        hmac_secret: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
     ):
         if not api_key:
@@ -59,7 +58,7 @@ class AsyncElfaClient:
         self._transport = AsyncTransport(
             api_key, base_url, timeout, retries, retry_delay, headers
         )
-        self.auto = AsyncAutoClient(transport=self._transport, hmac_secret=hmac_secret)
+        self.auto = AsyncAutoClient(transport=self._transport)
 
     async def __aenter__(self) -> "AsyncElfaClient":
         return self

@@ -1,14 +1,13 @@
 """Auto condition engine clients (`/v2/auto/*`), sync and async.
 
-Mutations are HMAC-signed when an ``hmac_secret`` is configured (required for
-any mutation that is not a plain notification; harmless for notification-only
-queries). Notification streams are exposed as generators over SSE.
+Every route authenticates with the API key alone. Notification streams are
+exposed as generators over SSE.
 """
 
 from typing import Any, AsyncIterator, Dict, Iterator, Optional
 from urllib.parse import quote
 
-from elfa.client.base import SignedClient, drop_none, parse_model, stream_event
+from elfa.client.base import MountedClient, drop_none, parse_model, stream_event
 from elfa.exceptions import ElfaValidationError
 from elfa.models.auto import (
     AutoChatResponse,
@@ -34,7 +33,7 @@ from elfa.utils.sse import SSE_HEADERS, aiter_sse, iter_sse
 MOUNT = "/v2/auto"
 
 
-class AutoClient(SignedClient):
+class AutoClient(MountedClient):
     """Synchronous Auto engine client. Access via ``ElfaClient.auto``,
     or construct standalone with an ``api_key``."""
 
@@ -46,7 +45,6 @@ class AutoClient(SignedClient):
         timeout: float = 30.0,
         retries: int = 3,
         retry_delay: float = 1.0,
-        hmac_secret: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
         transport: Optional[SyncTransport] = None,
     ):
@@ -57,7 +55,7 @@ class AutoClient(SignedClient):
             transport = SyncTransport(
                 api_key, base_url, timeout, retries, retry_delay, headers
             )
-        super().__init__(transport, MOUNT, hmac_secret)
+        super().__init__(transport, MOUNT)
 
     def close(self) -> None:
         """Close the connection pool if this client owns it (standalone use)."""
@@ -68,14 +66,11 @@ class AutoClient(SignedClient):
         return self._transport.request_json("GET", f"{MOUNT}{path}", params=params)
 
     def _post(self, path: str, body: Any = None) -> Any:
-        url, content, headers = self._post_args(path, body)
-        return self._transport.request_json(
-            "POST", url, content=content, headers=headers
-        )
+        url, content = self._post_args(path, body)
+        return self._transport.request_json("POST", url, content=content)
 
     def _delete(self, path: str) -> Any:
-        url, headers = self._delete_args(path)
-        return self._transport.request_json("DELETE", url, headers=headers)
+        return self._transport.request_json("DELETE", self._delete_args(path))
 
     def chat(
         self,
@@ -205,7 +200,7 @@ class AutoClient(SignedClient):
                     return
 
 
-class AsyncAutoClient(SignedClient):
+class AsyncAutoClient(MountedClient):
     """Asynchronous Auto engine client. Access via ``AsyncElfaClient.auto``,
     or construct standalone with an ``api_key``."""
 
@@ -217,7 +212,6 @@ class AsyncAutoClient(SignedClient):
         timeout: float = 30.0,
         retries: int = 3,
         retry_delay: float = 1.0,
-        hmac_secret: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
         transport: Optional[AsyncTransport] = None,
     ):
@@ -228,7 +222,7 @@ class AsyncAutoClient(SignedClient):
             transport = AsyncTransport(
                 api_key, base_url, timeout, retries, retry_delay, headers
             )
-        super().__init__(transport, MOUNT, hmac_secret)
+        super().__init__(transport, MOUNT)
 
     async def close(self) -> None:
         """Close the connection pool if this client owns it (standalone use)."""
@@ -241,14 +235,11 @@ class AsyncAutoClient(SignedClient):
         )
 
     async def _post(self, path: str, body: Any = None) -> Any:
-        url, content, headers = self._post_args(path, body)
-        return await self._transport.request_json(
-            "POST", url, content=content, headers=headers
-        )
+        url, content = self._post_args(path, body)
+        return await self._transport.request_json("POST", url, content=content)
 
     async def _delete(self, path: str) -> Any:
-        url, headers = self._delete_args(path)
-        return await self._transport.request_json("DELETE", url, headers=headers)
+        return await self._transport.request_json("DELETE", self._delete_args(path))
 
     async def chat(
         self,

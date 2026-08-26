@@ -1,7 +1,5 @@
-"""Auto client: signing, paths, param mapping, and SSE streaming."""
+"""Auto client: paths, param mapping, and SSE streaming."""
 
-import hashlib
-import hmac
 from contextlib import asynccontextmanager, contextmanager
 
 import httpx
@@ -18,23 +16,17 @@ def _transport():
     return SyncTransport("k", BASE_URL, retries=0)
 
 
-def _sig(secret, timestamp, method, path, body):
-    payload = f"{timestamp}{method}{path}{body}"
-    return hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
-
-
 @respx.mock
-def test_create_query_signs_over_relative_path_with_compact_body():
+def test_create_query_posts_compact_body_with_api_key_only():
     captured = {}
 
     def handler(request):
         captured["body"] = request.content.decode()
-        captured["ts"] = request.headers.get("x-elfa-timestamp")
-        captured["sig"] = request.headers.get("x-elfa-signature")
+        captured["headers"] = request.headers
         return httpx.Response(200, json={"id": "q1", "status": "pending"})
 
     respx.post(f"{BASE_URL}/v2/auto/queries").mock(side_effect=handler)
-    client = AutoClient(transport=_transport(), hmac_secret="sec")
+    client = AutoClient(transport=_transport())
     query = {
         "query": {"conditions": {"AND": []}, "actions": [], "expiresIn": "1h"},
         "title": "t",
@@ -42,40 +34,28 @@ def test_create_query_signs_over_relative_path_with_compact_body():
     result = client.create_query(query)
 
     assert result.id == "q1"
-    body = captured["body"]
-    assert body == (
+    assert captured["body"] == (
         '{"query":{"conditions":{"AND":[]},"actions":[],"expiresIn":"1h"},"title":"t"}'
     )
-    assert captured["sig"] == _sig("sec", captured["ts"], "POST", "/queries", body)
+    assert captured["headers"]["x-elfa-api-key"] == "k"
+    assert "x-elfa-signature" not in captured["headers"]
+    assert "x-elfa-timestamp" not in captured["headers"]
 
 
 @respx.mock
-def test_create_query_unsigned_without_secret():
-    def handler(request):
-        assert "x-elfa-signature" not in request.headers
-        return httpx.Response(200, json={"id": "q1"})
-
-    respx.post(f"{BASE_URL}/v2/auto/queries").mock(side_effect=handler)
-    AutoClient(transport=_transport()).create_query({"query": {}})
-
-
-@respx.mock
-def test_cancel_query_signs_empty_body():
+def test_cancel_query_sends_empty_body():
     captured = {}
 
     def handler(request):
         captured["body"] = request.content.decode()
-        captured["ts"] = request.headers.get("x-elfa-timestamp")
-        captured["sig"] = request.headers.get("x-elfa-signature")
+        captured["headers"] = request.headers
         return httpx.Response(200, json={"id": "q1", "status": "cancelled"})
 
     respx.post(f"{BASE_URL}/v2/auto/queries/q1/cancel").mock(side_effect=handler)
-    AutoClient(transport=_transport(), hmac_secret="sec").cancel_query("q1")
+    AutoClient(transport=_transport()).cancel_query("q1")
 
     assert captured["body"] == ""
-    assert captured["sig"] == _sig(
-        "sec", captured["ts"], "POST", "/queries/q1/cancel", ""
-    )
+    assert "x-elfa-signature" not in captured["headers"]
 
 
 @respx.mock
@@ -145,23 +125,19 @@ def test_list_executions_maps_query_id_param():
 
 
 @respx.mock
-async def test_async_create_query_signs():
+async def test_async_create_query_posts_compact_body():
     captured = {}
 
     def handler(request):
         captured["body"] = request.content.decode()
-        captured["ts"] = request.headers.get("x-elfa-timestamp")
-        captured["sig"] = request.headers.get("x-elfa-signature")
+        captured["headers"] = request.headers
         return httpx.Response(200, json={"id": "q1"})
 
     respx.post(f"{BASE_URL}/v2/auto/queries").mock(side_effect=handler)
-    client = AsyncAutoClient(
-        transport=AsyncTransport("k", BASE_URL, retries=0), hmac_secret="sec"
-    )
+    client = AsyncAutoClient(transport=AsyncTransport("k", BASE_URL, retries=0))
     await client.create_query({"query": {}})
-    body = captured["body"]
-    assert body == '{"query":{}}'
-    assert captured["sig"] == _sig("sec", captured["ts"], "POST", "/queries", body)
+    assert captured["body"] == '{"query":{}}'
+    assert "x-elfa-signature" not in captured["headers"]
     await client._transport.close()
 
 

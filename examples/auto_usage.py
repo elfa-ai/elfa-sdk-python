@@ -1,7 +1,6 @@
 """Auto condition engine.
 
-Notification-only Auto queries need no HMAC secret. Any other mutation shape
-requires ``hmac_secret`` (generate one in the dev portal).
+Every Auto route authenticates with the API key alone.
 """
 
 import os
@@ -31,10 +30,7 @@ NOTIFY_QUERY = {
 
 
 def main() -> None:
-    with ElfaClient(
-        api_key=os.environ["ELFA_API_KEY"],
-        hmac_secret=os.environ.get("ELFA_HMAC_SECRET"),
-    ) as client:
+    with ElfaClient(api_key=os.environ["ELFA_API_KEY"]) as client:
         validation = client.auto.validate_query(NOTIFY_QUERY)
         print("valid:", validation.valid)
 
