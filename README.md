@@ -114,7 +114,7 @@ All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 
 Time-ranged endpoints accept either `time_window="24h"` or both `from_time` and `to_time` (unix seconds).
 
-`get_account_smart_stats` is **legacy — removed on 28 October 2026**. It returns raw metrics, not a reputation score, and is not being extended; use `get_keyword_mentions` instead, which returns the posting account alongside each mention's engagement metrics.
+`get_account_smart_stats` is **legacy — it still works, but will be removed on 28 October 2026**. It returns raw metrics, not a reputation score, and is not being extended before then; use `get_keyword_mentions` instead, which returns the posting account alongside each mention's engagement metrics.
 
 `get_token_news` returns X posts from accounts tagged as news sources, not articles published by news outlets.
 

@@ -104,11 +104,11 @@ class AsyncElfaClient:
     async def get_account_smart_stats(self, username: str) -> AccountSmartStatsResponse:
         """Smart follower and engagement metrics for an X account.
 
-        Deprecated: ``GET /v2/account/smart-stats`` is legacy and is removed on
-        28 October 2026. It returns raw account metrics, not a reputation score,
-        and is not being extended. Use :meth:`get_keyword_mentions` instead,
-        which returns the posting account alongside each mention's engagement
-        metrics.
+        Deprecated: ``GET /v2/account/smart-stats`` is legacy. It still works,
+        but will be removed on 28 October 2026, and is not being extended before
+        then. It returns raw account metrics, not a reputation score. Use
+        :meth:`get_keyword_mentions` instead, which returns the posting account
+        alongside each mention's engagement metrics.
         """
         path, params = build.account_smart_stats(username)
         return parse_model(AccountSmartStatsResponse, await self._get(path, params))
