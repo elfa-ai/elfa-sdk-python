@@ -2803,7 +2803,7 @@
 	},
 	"info": {
 		"title": "Elfa Api",
-		"version": "2.6.3",
+		"version": "2.7.0",
 		"description": "API documentation for Elfa"
 	},
 	"paths": {
@@ -3077,11 +3077,12 @@
 						"description": "User not found"
 					}
 				},
-				"description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve smart stats given username",
-				"summary": "Smart stats of accounts",
+				"description": "Retrieve smart stats given username",
+				"summary": "Smart stats of accounts (legacy, removed 28 Oct 2026)",
 				"tags": [
 					"v2 Account"
 				],
+				"deprecated": true,
 				"security": [
 					{
 						"api_key": []
@@ -3097,7 +3098,8 @@
 							"type": "string"
 						}
 					}
-				]
+				],
+				"x-deprecated-description": "**Legacy — scheduled for removal on 28 October 2026.** This endpoint returns raw account metrics, not a reputation score, and is being retired rather than extended. Plan migrations before that date."
 			}
 		},
 		"/v2/data/market-events": {
@@ -3647,8 +3649,8 @@
 						"description": "Unauthorized"
 					}
 				},
-				"description": "Retrieve token-related news mentions.",
-				"summary": "Token news mentions",
+				"description": "Retrieve token-related news mentions.\n\nResults are X (Twitter) posts from accounts tagged as news sources, not\narticles published by news outlets.",
+				"summary": "Token news mentions (tweet source only)",
 				"tags": [
 					"v2 Data"
 				],
@@ -4136,7 +4138,7 @@
 						}
 					}
 				},
-				"description": "Ask the AI to help you build an EQL query.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n### Cost\n\nAPI mode: `1 + dynamic` credits\n- base request charge: `1` credit\n- dynamic usage charge: `ceil(request_cost * 750)` credits\n\nIn x402 mode, equivalent reference pricing remains:\n- `fast`: `5 credits` (`$0.0725`)\n- `expert`: `18 credits` (`$0.261`)\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nChat produces drafts only; subsequent activation goes through\n`POST /queries/drafts/{draftId}/convert`.\n\n### Request Example\n\n```json\n{\n  \"message\": \"Alert me when BTC breaks 100k\",\n  \"speed\": \"expert\",\n  \"sessionId\": \"optional-session-id\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I can help with that...\",\n  \"title\": \"BTC Breakout Alert\",\n  \"reasoning\": null,\n  \"planIds\": [],\n  \"credits\": 104\n}\n```\n\n`credits` is what this call cost, and carries the same total as the\n`x-elfa-credits` response header. Chat is dynamically priced, so read it\nrather than assuming a flat cost.\n\n> Best practice: persist `sessionId` and reuse it for follow-up prompts so\n> the model keeps context across turns.",
+				"description": "Ask the AI to help you build an EQL query.\n\nThe response message contains the AI's reply in Markdown. When it generates EQL,\nit will be in a JSON code block that you can extract, validate, and submit.\n\nUse `sessionId` in follow-up requests to maintain conversation context.\n\n### Cost\n\nAPI mode: `1 + dynamic` credits\n- base request charge: `1` credit\n- dynamic usage charge: `ceil(request_cost * 750)` credits\n\nx402 mode is quoted in USD per turn, not credits. The 402 response lists\nboth schemes and the client picks one:\n- `exact` (flat, charged in full): `fast` `$1`, `expert` `$2`\n- `upto` (authorize a ceiling, settle actual cost): `fast` `$2`, `expert` `$6`\n\n### Auth\n\nRequired header:\n```http\nx-elfa-api-key: <api_key>\n```\n\nChat produces drafts only; subsequent activation goes through\n`POST /queries/drafts/{draftId}/convert`.\n\n### Request Example\n\n```json\n{\n  \"message\": \"Alert me when BTC breaks 100k\",\n  \"speed\": \"expert\",\n  \"sessionId\": \"optional-session-id\"\n}\n```\n\n### Response Example (200)\n\n```json\n{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I can help with that...\",\n  \"title\": \"BTC Breakout Alert\",\n  \"reasoning\": null,\n  \"planIds\": [],\n  \"credits\": 104\n}\n```\n\n`credits` is what this call cost, and carries the same total as the\n`x-elfa-credits` response header. Chat is dynamically priced, so read it\nrather than assuming a flat cost.\n\n> Best practice: persist `sessionId` and reuse it for follow-up prompts so\n> the model keeps context across turns.",
 				"summary": "Builder Chat",
 				"tags": [
 					"v2 Auto"
@@ -5893,11 +5895,12 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "This experimental endpoint is under active development and its behavior may change without notice.\nUse with caution in production environments.\n\nRetrieve smart stats given username\n\n**Cost:** 1 credit ($0.0145). Requires x402 payment.",
-				"summary": "Smart stats of accounts",
+				"description": "Retrieve smart stats given username\n\n**Cost:** 1 credit ($0.0145). Requires x402 payment.",
+				"summary": "Smart stats of accounts (legacy, removed 28 Oct 2026)",
 				"tags": [
 					"x402 Account"
 				],
+				"deprecated": true,
 				"security": [],
 				"parameters": [
 					{
@@ -5909,7 +5912,8 @@
 							"type": "string"
 						}
 					}
-				]
+				],
+				"x-deprecated-description": "**Legacy — scheduled for removal on 28 October 2026.** This endpoint returns raw account metrics, not a reputation score, and is being retired rather than extended. Plan migrations before that date."
 			}
 		},
 		"/x402/v2/data/top-mentions": {
@@ -6431,8 +6435,8 @@
 						"description": "Payment required (x402)"
 					}
 				},
-				"description": "Retrieve token-related news mentions.\n\n**Cost:** 1 credit ($0.0145). Requires x402 payment.",
-				"summary": "Token news mentions",
+				"description": "Retrieve token-related news mentions.\n\nResults are X (Twitter) posts from accounts tagged as news sources, not\narticles published by news outlets.\n\n**Cost:** 1 credit ($0.0145). Requires x402 payment.",
+				"summary": "Token news mentions (tweet source only)",
 				"tags": [
 					"x402 Data"
 				],
