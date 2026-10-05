@@ -31,8 +31,20 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   `hyperliquid | gmx | binance`. Passing `"pacifica"` to `validate_symbol` now
   fails type checking; it would have been rejected by the API regardless.
 
+### Added
+
+- **`app_name` adds your product to the `User-Agent`.** Pass
+  `app_name="my-bot/1.2"` to `ElfaClient`, `AsyncElfaClient`, `AutoClient` or
+  `AsyncAutoClient` and every request carries
+  `User-Agent: elfa-sdk-python/6.0.0 my-bot/1.2`. A composed `client.auto`
+  shares the parent's value. It must be 1-100 printable ASCII characters;
+  anything else raises `ElfaValidationError` at construction.
+
 ### Changed
 
+- A `User-Agent` passed in `headers` now replaces the SDK's own in any casing.
+  Before, `headers={"user-agent": ...}` sat next to the SDK's `User-Agent`
+  instead of replacing it.
 - Internal: `SignedClient` is now `MountedClient`, since all it does is join the
   mount prefix to the path. It was never exported from `elfa`.
 - `swagger.json` refreshed to API `2.6.3`. A credit is now $0.0145, so the x402

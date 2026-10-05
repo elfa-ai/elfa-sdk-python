@@ -6,6 +6,7 @@ helpers below so behaviour stays identical across the sync and async clients.
 """
 
 import asyncio
+import re
 import time
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any, AsyncIterator, Dict, Iterator, Optional
@@ -16,23 +17,66 @@ from elfa.exceptions.base import (
     ElfaAPIError,
     ElfaNetworkError,
     ElfaTimeoutError,
+    ElfaValidationError,
     is_retryable_error,
     raise_for_response,
 )
 from elfa.version import VERSION
 
 DEFAULT_BASE_URL = "https://api.elfa.ai"
+SDK_PRODUCT = "elfa-sdk-python"
+APP_NAME_MAX_LENGTH = 100
+
+# Printable ASCII only: anything else is not a valid header value and would
+# fail the request rather than the construction.
+_APP_NAME_PATTERN = re.compile(r"[\x20-\x7e]+")
+
+
+def normalize_app_name(app_name: Optional[str]) -> Optional[str]:
+    """Validate and trim an integrator's ``app_name``.
+
+    Raises ``ElfaValidationError`` for an empty value, one longer than
+    ``APP_NAME_MAX_LENGTH``, or one with characters outside printable ASCII.
+    """
+    if app_name is None:
+        return None
+    trimmed = app_name.strip() if isinstance(app_name, str) else ""
+    if (
+        not trimmed
+        or len(trimmed) > APP_NAME_MAX_LENGTH
+        or not _APP_NAME_PATTERN.fullmatch(trimmed)
+    ):
+        raise ElfaValidationError(
+            f"app_name must be 1-{APP_NAME_MAX_LENGTH} printable ASCII "
+            'characters, e.g. "my-bot/1.2"'
+        )
+    return trimmed
+
+
+def user_agent(app_name: Optional[str] = None) -> str:
+    """``elfa-sdk-python/<version>``, followed by ``app_name`` if set."""
+    app = normalize_app_name(app_name)
+    return f"{SDK_PRODUCT}/{VERSION} {app}" if app else f"{SDK_PRODUCT}/{VERSION}"
 
 
 def default_headers(
-    api_key: str, extra: Optional[Dict[str, str]] = None
+    api_key: str,
+    extra: Optional[Dict[str, str]] = None,
+    app_name: Optional[str] = None,
 ) -> Dict[str, str]:
+    """Headers sent on every request.
+
+    A ``User-Agent`` in ``extra``, in any casing, replaces the SDK's own.
+    ``app_name`` is validated either way.
+    """
+    agent = user_agent(app_name)
     headers = {
         "x-elfa-api-key": api_key,
-        "User-Agent": f"elfa-sdk-python/{VERSION}",
         "Accept": "application/json",
         "Content-Type": "application/json",
     }
+    if not any(name.lower() == "user-agent" for name in (extra or {})):
+        headers["User-Agent"] = agent
     if extra:
         headers.update(extra)
     return headers
@@ -74,12 +118,14 @@ class SyncTransport:
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        *,
+        app_name: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.retries = retries
         self.retry_delay = retry_delay
         self._client = httpx.Client(
-            headers=default_headers(api_key, headers),
+            headers=default_headers(api_key, headers, app_name),
             timeout=timeout,
             follow_redirects=True,
         )
@@ -159,12 +205,14 @@ class AsyncTransport:
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        *,
+        app_name: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.retries = retries
         self.retry_delay = retry_delay
         self._client = httpx.AsyncClient(
-            headers=default_headers(api_key, headers),
+            headers=default_headers(api_key, headers, app_name),
             timeout=timeout,
             follow_redirects=True,
         )

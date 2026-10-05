@@ -46,6 +46,7 @@ class AutoClient(MountedClient):
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        app_name: Optional[str] = None,
         transport: Optional[SyncTransport] = None,
     ):
         self._owns_transport = transport is None
@@ -53,7 +54,13 @@ class AutoClient(MountedClient):
             if not api_key:
                 raise ElfaValidationError("api_key is required")
             transport = SyncTransport(
-                api_key, base_url, timeout, retries, retry_delay, headers
+                api_key,
+                base_url,
+                timeout,
+                retries,
+                retry_delay,
+                headers,
+                app_name=app_name,
             )
         super().__init__(transport, MOUNT)
 
@@ -213,6 +220,7 @@ class AsyncAutoClient(MountedClient):
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        app_name: Optional[str] = None,
         transport: Optional[AsyncTransport] = None,
     ):
         self._owns_transport = transport is None
@@ -220,7 +228,13 @@ class AsyncAutoClient(MountedClient):
             if not api_key:
                 raise ElfaValidationError("api_key is required")
             transport = AsyncTransport(
-                api_key, base_url, timeout, retries, retry_delay, headers
+                api_key,
+                base_url,
+                timeout,
+                retries,
+                retry_delay,
+                headers,
+                app_name=app_name,
             )
         super().__init__(transport, MOUNT)
 

@@ -51,12 +51,14 @@ class AsyncElfaClient:
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        *,
+        app_name: Optional[str] = None,
     ):
         if not api_key:
             raise ElfaValidationError("api_key is required")
 
         self._transport = AsyncTransport(
-            api_key, base_url, timeout, retries, retry_delay, headers
+            api_key, base_url, timeout, retries, retry_delay, headers, app_name=app_name
         )
         self.auto = AsyncAutoClient(transport=self._transport)
 
