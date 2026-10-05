@@ -49,6 +49,11 @@ class AutoClient(MountedClient):
         app_name: Optional[str] = None,
         transport: Optional[SyncTransport] = None,
     ):
+        if transport is not None and app_name is not None:
+            raise ElfaValidationError(
+                "app_name cannot be combined with transport; set it on the "
+                "client that creates the transport"
+            )
         self._owns_transport = transport is None
         if transport is None:
             if not api_key:
@@ -223,6 +228,11 @@ class AsyncAutoClient(MountedClient):
         app_name: Optional[str] = None,
         transport: Optional[AsyncTransport] = None,
     ):
+        if transport is not None and app_name is not None:
+            raise ElfaValidationError(
+                "app_name cannot be combined with transport; set it on the "
+                "client that creates the transport"
+            )
         self._owns_transport = transport is None
         if transport is None:
             if not api_key:

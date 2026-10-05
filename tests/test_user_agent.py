@@ -12,6 +12,8 @@ from elfa.client.auto_client import AsyncAutoClient, AutoClient
 from elfa.exceptions import ElfaValidationError
 from elfa.utils.http import (
     APP_NAME_MAX_LENGTH,
+    AsyncTransport,
+    SyncTransport,
     default_headers,
     normalize_app_name,
     user_agent,
@@ -148,6 +150,20 @@ async def test_standalone_async_auto_client_sends_app_name():
     agent = client._transport._client.headers["user-agent"]
     assert agent == f"elfa-sdk-python/{VERSION} my-bot/1.2"
     await client.close()
+
+
+def test_auto_client_rejects_app_name_with_an_existing_transport():
+    transport = SyncTransport("k", BASE_URL)
+    with pytest.raises(ElfaValidationError, match="transport"):
+        AutoClient(transport=transport, app_name="my-bot/1.2")
+    transport.close()
+
+
+async def test_async_auto_client_rejects_app_name_with_an_existing_transport():
+    transport = AsyncTransport("k", BASE_URL)
+    with pytest.raises(ElfaValidationError, match="transport"):
+        AsyncAutoClient(transport=transport, app_name="my-bot/1.2")
+    await transport.close()
 
 
 @pytest.mark.parametrize("cls", [ElfaClient, AsyncElfaClient])
