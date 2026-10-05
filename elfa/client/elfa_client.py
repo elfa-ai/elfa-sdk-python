@@ -40,6 +40,10 @@ class ElfaClient:
         retries: Retries for idempotent (GET) requests.
         retry_delay: Base delay for exponential backoff.
         headers: Extra headers sent on every request.
+        app_name: Your product name and version, appended to the
+            ``User-Agent``, e.g. ``"my-bot/1.2"`` gives
+            ``elfa-sdk-python/<version> my-bot/1.2``. Printable ASCII, at most
+            100 characters. Keyword-only.
 
     Example:
         >>> from elfa import ElfaClient
@@ -57,12 +61,14 @@ class ElfaClient:
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        *,
+        app_name: Optional[str] = None,
     ):
         if not api_key:
             raise ElfaValidationError("api_key is required")
 
         self._transport = SyncTransport(
-            api_key, base_url, timeout, retries, retry_delay, headers
+            api_key, base_url, timeout, retries, retry_delay, headers, app_name=app_name
         )
         self.auto = AutoClient(transport=self._transport)
 

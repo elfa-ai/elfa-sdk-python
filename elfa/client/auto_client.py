@@ -46,14 +46,26 @@ class AutoClient(MountedClient):
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        app_name: Optional[str] = None,
         transport: Optional[SyncTransport] = None,
     ):
+        if transport is not None and app_name is not None:
+            raise ElfaValidationError(
+                "app_name cannot be combined with transport; set it on the "
+                "client that creates the transport"
+            )
         self._owns_transport = transport is None
         if transport is None:
             if not api_key:
                 raise ElfaValidationError("api_key is required")
             transport = SyncTransport(
-                api_key, base_url, timeout, retries, retry_delay, headers
+                api_key,
+                base_url,
+                timeout,
+                retries,
+                retry_delay,
+                headers,
+                app_name=app_name,
             )
         super().__init__(transport, MOUNT)
 
@@ -213,14 +225,26 @@ class AsyncAutoClient(MountedClient):
         retries: int = 3,
         retry_delay: float = 1.0,
         headers: Optional[Dict[str, str]] = None,
+        app_name: Optional[str] = None,
         transport: Optional[AsyncTransport] = None,
     ):
+        if transport is not None and app_name is not None:
+            raise ElfaValidationError(
+                "app_name cannot be combined with transport; set it on the "
+                "client that creates the transport"
+            )
         self._owns_transport = transport is None
         if transport is None:
             if not api_key:
                 raise ElfaValidationError("api_key is required")
             transport = AsyncTransport(
-                api_key, base_url, timeout, retries, retry_delay, headers
+                api_key,
+                base_url,
+                timeout,
+                retries,
+                retry_delay,
+                headers,
+                app_name=app_name,
             )
         super().__init__(transport, MOUNT)
 

@@ -68,6 +68,7 @@ client = ElfaClient(
     retries=3,                       # retries for idempotent (GET) requests
     retry_delay=1.0,                 # base delay for exponential backoff
     headers=None,                    # extra headers sent on every request
+    app_name=None,                   # your product, appended to the User-Agent, e.g. "my-bot/1.2"
 )
 
 # Quick reachability/auth check
