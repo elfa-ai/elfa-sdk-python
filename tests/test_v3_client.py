@@ -238,6 +238,16 @@ def test_get_entities_comma_joins_entity_type_and_parses():
     assert result.has_more is False
 
 
+@respx.mock
+def test_empty_lists_are_not_sent():
+    route = respx.get(f"{BASE_URL}/v3/events").mock(
+        return_value=httpx.Response(200, json=_page("events", [EVENT]))
+    )
+    _client().get_events(from_time=1, entity_ids=[], alert_action=[])
+
+    assert _params(route) == {"from": "1"}
+
+
 def test_get_entities_requires_q():
     with pytest.raises(ElfaValidationError):
         _client().get_entities("")

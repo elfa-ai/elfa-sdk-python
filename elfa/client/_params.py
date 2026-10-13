@@ -205,7 +205,9 @@ def chat_body(
 
 
 def _csv(values: Optional[Sequence[str]]) -> Optional[str]:
-    if values is None or isinstance(values, str):
+    if not values:
+        return None
+    if isinstance(values, str):
         return values
     return ",".join(values)
 
