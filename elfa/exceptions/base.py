@@ -178,6 +178,17 @@ def raise_for_response(response: httpx.Response) -> None:
             if isinstance(data, dict)
             else None
         )
+        reasons = [
+            (
+                f"{item['field']}: {item['message']}"
+                if item.get("field")
+                else item["message"]
+            )
+            for item in (errors if isinstance(errors, list) else [])
+            if isinstance(item, dict) and item.get("message")
+        ]
+        if reasons:
+            message = f"{message}: {'; '.join(reasons)}"
         raise ElfaValidationError(
             message, validation_errors=errors, status_code=400, request_id=request_id
         )

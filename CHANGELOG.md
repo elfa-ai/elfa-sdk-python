@@ -22,7 +22,8 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   `get_trending_contracts`, `get_calls`, `get_call_episodes`,
   `get_positioning(entity_id)`, `get_top_accounts` and `get_key_status`.
   Parameters are snake_case (`from_time`/`to_time` for `from`/`to`), list
-  parameters take Python lists and are sent comma-separated, and only the
+  parameters take Python lists and are sent comma-separated (an empty list
+  raises `ElfaValidationError` instead of dropping the filter), and only the
   parameters you set are sent. Responses are typed in `elfa.models.v3`. PAYG,
   Grow and Enterprise keys can call every v3 endpoint; a Free key can call only
   `get_key_status`.
@@ -52,6 +53,8 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   A `400` names the failing field in `details` (for example `query.from`,
   `from is required`), and `message` alone often reads `Invalid parameters`.
   The SDK only read an `errors` key, so `validation_errors` was always `None`.
+  The field and reason are now also appended to the error message, so
+  `str(error)` says what to fix.
 
 ## 6.0.0
 

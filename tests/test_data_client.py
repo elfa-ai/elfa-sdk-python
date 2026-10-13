@@ -411,3 +411,20 @@ async def test_async_chat_include_sources_sends_flag():
         '{"message":"hello","includeSources":false}'
     )
     assert result.data.sources == []
+
+
+def test_chat_stream_event_survives_malformed_sources():
+    from elfa.client.base import chat_stream_event
+    from elfa.utils.sse import SSEMessage
+
+    event = chat_stream_event(
+        SSEMessage(
+            event="message",
+            data='{"type": "complete", "sources": [{"kind": "web"}]}',
+            id=None,
+        )
+    )
+
+    assert event is not None
+    assert event.type == "complete"
+    assert event.sources is None

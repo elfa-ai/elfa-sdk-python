@@ -239,13 +239,14 @@ def test_get_entities_comma_joins_entity_type_and_parses():
 
 
 @respx.mock
-def test_empty_lists_are_not_sent():
+def test_empty_list_raises_instead_of_dropping_the_filter():
     route = respx.get(f"{BASE_URL}/v3/events").mock(
         return_value=httpx.Response(200, json=_page("events", [EVENT]))
     )
-    _client().get_events(from_time=1, entity_ids=[], alert_action=[])
+    with pytest.raises(ElfaValidationError, match="empty list"):
+        _client().get_events(from_time=1, entity_ids=[])
 
-    assert _params(route) == {"from": "1"}
+    assert not route.called
 
 
 def test_get_entities_requires_q():
@@ -593,7 +594,10 @@ def test_v3_400_raises_validation_error_with_request_id():
     with pytest.raises(ElfaValidationError) as exc:
         _client().get_events(entity_ids=[BTC])
     assert exc.value.status_code == 400
-    assert exc.value.message == "Invalid parameters"
+    assert exc.value.message == "Invalid parameters: query.from: from is required"
+    assert exc.value.validation_errors == [
+        {"field": "query.from", "message": "from is required"}
+    ]
     assert exc.value.request_id == "req-1"
 
 
@@ -726,3 +730,33 @@ async def test_async_v3_error_propagates():
     with pytest.raises(ElfaValidationError):
         await client.get_entities("btc")
     await client._transport.close()
+
+
+@respx.mock
+@pytest.mark.parametrize(
+    "method, path, key, kwargs",
+    [
+        ("get_storylines", "/v3/events/storylines", "storylines", {"from_time": 1}),
+        ("get_arcs", "/v3/events/arcs", "arcs", {}),
+        (
+            "get_trending_contracts",
+            "/v3/market/crypto/trending-contracts",
+            "contracts",
+            {"from_time": 1},
+        ),
+        ("get_calls", "/v3/calls", "calls", {"from_time": 1}),
+        ("get_call_episodes", "/v3/calls/episodes", "episodes", {"from_time": 1}),
+        ("get_top_accounts", "/v3/people/accounts", "accounts", {}),
+    ],
+)
+async def test_async_list_methods_hit_their_paths(method, path, key, kwargs):
+    route = respx.get(f"{BASE_URL}{path}").mock(
+        return_value=httpx.Response(200, json=_page(key, [], False))
+    )
+    client = AsyncV3Client(api_key="k", base_url=BASE_URL, retries=0)
+    result = await getattr(client, method)(**kwargs)
+    await client.close()
+
+    assert route.called
+    assert getattr(result, key) == []
+    assert client._transport._client.is_closed is True

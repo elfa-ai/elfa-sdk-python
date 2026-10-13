@@ -66,14 +66,17 @@ When exploring the codebase, reference components by their file paths:
 books, mindshare and trending contracts; calls, call episodes and positioning; ranked
 accounts; key status.
 ```python
+import time
+
 bitcoin = client.v3.get_entities("btc", entity_type=["token"], limit=1).entities[0]
+since = int(time.time()) - 86400
 events = client.v3.get_events(entity_ids=[bitcoin.id], from_time=since, limit=10)
 positioning = client.v3.get_positioning(bitcoin.id)
 ```
 Rules to respect in code and tests:
 - Times are unix seconds; milliseconds are a `400`. `from_time` is required except when
-  fetching by id or searching with `q`; entities, arcs, positioning and top accounts take
-  no range.
+  fetching by id or searching with `q`, and `get_events(sort="relevant")` refuses it;
+  entities, arcs, positioning and top accounts take no range.
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan: `get_key_status().history_from`.
 - PAYG, Grow and Enterprise keys can call every v3 endpoint; a Free key only

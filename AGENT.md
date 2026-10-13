@@ -67,7 +67,8 @@ events = client.v3.get_events(entity_ids=[bitcoin.id], from_time=since, limit=10
 positioning = client.v3.get_positioning(bitcoin.id)
 ```
 - Times are unix seconds, UTC. Milliseconds are a `400`.
-- `from_time` is required except when fetching by id or searching with `q`. Entities,
+- `from_time` is required except when fetching by id or searching with `q`;
+  `get_events(sort="relevant")` refuses it. Entities,
   arcs, positioning and top accounts take no range; mindshare takes `period` + `to_time`.
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`

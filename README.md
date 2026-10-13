@@ -247,11 +247,11 @@ Rules every v3 endpoint follows:
 
 - **Access.** PAYG, Grow and Enterprise keys can call every v3 endpoint. A Free key can call only `get_key_status()`; the rest raise `ElfaAPIError` with status `403`: `The v3 API is free on the Pay-as-you-go and Grow plans. Upgrade at …`.
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
-- **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
+- **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
 - **History** is 30 days, 60 days or 2 years back, by plan. `get_key_status().history_from` returns the start; an earlier `from_time` is cut, and `served_from` says where.
 - **Paging.** Pass `next_cursor` back as `cursor`. `has_more=False` and `next_cursor=None` mark the last page. A cursor belongs to its query.
-- **Lists.** List parameters (`entity_ids`, `entity_type`, `alert_action`, `relation` and the id lists) take Python lists and are sent comma-separated. At most 30 ids.
+- **Lists.** List parameters (`entity_ids`, `entity_type`, `alert_action`, `relation` and the id lists) take Python lists and are sent comma-separated. At most 30 ids. An empty list raises `ElfaValidationError` rather than silently dropping the filter.
 - **Unknown parameters are a `400`**, never ignored. The SDK sends only the parameters you set.
 - No endpoint returns post text.
 
@@ -295,7 +295,7 @@ make check   # flake8 + mypy + pytest
 make format  # black + isort
 ```
 
-Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip. Set `ELFA_V3=1` as well to run the v3 tests on a PAYG, Grow or Enterprise key.
+Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip. Set `ELFA_V3=1` as well to run the remaining v3 tests on a PAYG, Grow or Enterprise key.
 
 ## Support
 

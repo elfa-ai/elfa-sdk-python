@@ -205,8 +205,12 @@ def chat_body(
 
 
 def _csv(values: Optional[Sequence[str]]) -> Optional[str]:
-    if not values:
+    if values is None:
         return None
+    if not values:
+        raise ElfaValidationError(
+            "An empty list would drop the filter. Omit it, or pass at least one value."
+        )
     if isinstance(values, str):
         return values
     return ",".join(values)
