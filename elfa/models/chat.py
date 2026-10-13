@@ -21,9 +21,6 @@ class ChatAssetMetadata(TypedDict, total=False):
 
 
 class ChatSource(ElfaModel):
-    """A link the research behind an answer read. ``kind`` is a plain string:
-    treat a value you do not recognise as ``web``."""
-
     url: str
     kind: str
     title: Optional[str] = None

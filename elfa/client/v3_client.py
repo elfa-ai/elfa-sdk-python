@@ -95,7 +95,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> EntitiesResponseV3:
-        """Resolve a ticker, name, handle, address or external id to an entity id."""
         path, params = build.v3_entities(q, entity_type, limit, cursor)
         return parse_model(EntitiesResponseV3, self._get(path, params))
 
@@ -121,7 +120,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> EventsResponseV3:
-        """Events in a time range, ranked by relevance, matching a topic, or by id."""
         path, params = build.v3_events(
             q,
             from_time,
@@ -158,7 +156,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> StorylinesResponseV3:
-        """Storylines: one development followed over days."""
         path, params = build.v3_storylines(
             q,
             from_time,
@@ -186,7 +183,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> ArcsResponseV3:
-        """Arcs: storylines grouped into a larger movement. Takes no time range."""
         path, params = build.v3_arcs(
             q, arc_ids, status, asset_class, entity_ids, sort, order, limit, cursor
         )
@@ -202,7 +198,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> CallBookResponseV3:
-        """A market's long/short lean, one bar per hour plus a live tick."""
         path, params = build.v3_call_book(
             market, from_time, to_time, order, limit, cursor
         )
@@ -217,7 +212,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> MindshareResponseV3:
-        """Assets ranked by their share of the market's attention over a period."""
         path, params = build.v3_mindshare(market, period, to_time, limit, cursor)
         return parse_model(MindshareResponseV3, self._get(path, params))
 
@@ -230,7 +224,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> TrendingContractsResponseV3:
-        """Contract addresses ranked by how many posts pasted them."""
         path, params = build.v3_trending_contracts(
             from_time, to_time, min_mentions, limit, cursor
         )
@@ -248,7 +241,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> CallsResponseV3:
-        """Posts that take or change a position."""
         path, params = build.v3_calls(
             from_time, to_time, call_ids, handle, entity_ids, order, limit, cursor
         )
@@ -269,7 +261,6 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> CallEpisodesResponseV3:
-        """Positions from open to close, with prices and the author's track record."""
         path, params = build.v3_call_episodes(
             from_time,
             to_time,
@@ -286,7 +277,6 @@ class V3Client:
         return parse_model(CallEpisodesResponseV3, self._get(path, params))
 
     def get_positioning(self, entity_id: str) -> PositioningResponseV3:
-        """Open longs and shorts on one asset, now."""
         path, params = build.v3_positioning(entity_id)
         return parse_model(PositioningResponseV3, self._get(path, params))
 
@@ -298,12 +288,10 @@ class V3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> TopAccountsResponseV3:
-        """Accounts ranked by standing."""
         path, params = build.v3_top_accounts(metric, order, limit, cursor)
         return parse_model(TopAccountsResponseV3, self._get(path, params))
 
     def get_key_status(self) -> KeyStatusV3:
-        """Plan, credits, limits and how far back the key reads."""
         return parse_model(KeyStatusV3, self._get("/v3/key-status"))
 
 
@@ -359,7 +347,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> EntitiesResponseV3:
-        """Resolve a ticker, name, handle, address or external id to an entity id."""
         path, params = build.v3_entities(q, entity_type, limit, cursor)
         return parse_model(EntitiesResponseV3, await self._get(path, params))
 
@@ -385,7 +372,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> EventsResponseV3:
-        """Events in a time range, ranked by relevance, matching a topic, or by id."""
         path, params = build.v3_events(
             q,
             from_time,
@@ -422,7 +408,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> StorylinesResponseV3:
-        """Storylines: one development followed over days."""
         path, params = build.v3_storylines(
             q,
             from_time,
@@ -450,7 +435,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> ArcsResponseV3:
-        """Arcs: storylines grouped into a larger movement. Takes no time range."""
         path, params = build.v3_arcs(
             q, arc_ids, status, asset_class, entity_ids, sort, order, limit, cursor
         )
@@ -466,7 +450,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> CallBookResponseV3:
-        """A market's long/short lean, one bar per hour plus a live tick."""
         path, params = build.v3_call_book(
             market, from_time, to_time, order, limit, cursor
         )
@@ -481,7 +464,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> MindshareResponseV3:
-        """Assets ranked by their share of the market's attention over a period."""
         path, params = build.v3_mindshare(market, period, to_time, limit, cursor)
         return parse_model(MindshareResponseV3, await self._get(path, params))
 
@@ -494,7 +476,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> TrendingContractsResponseV3:
-        """Contract addresses ranked by how many posts pasted them."""
         path, params = build.v3_trending_contracts(
             from_time, to_time, min_mentions, limit, cursor
         )
@@ -512,7 +493,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> CallsResponseV3:
-        """Posts that take or change a position."""
         path, params = build.v3_calls(
             from_time, to_time, call_ids, handle, entity_ids, order, limit, cursor
         )
@@ -533,7 +513,6 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> CallEpisodesResponseV3:
-        """Positions from open to close, with prices and the author's track record."""
         path, params = build.v3_call_episodes(
             from_time,
             to_time,
@@ -550,7 +529,6 @@ class AsyncV3Client:
         return parse_model(CallEpisodesResponseV3, await self._get(path, params))
 
     async def get_positioning(self, entity_id: str) -> PositioningResponseV3:
-        """Open longs and shorts on one asset, now."""
         path, params = build.v3_positioning(entity_id)
         return parse_model(PositioningResponseV3, await self._get(path, params))
 
@@ -562,10 +540,8 @@ class AsyncV3Client:
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> TopAccountsResponseV3:
-        """Accounts ranked by standing."""
         path, params = build.v3_top_accounts(metric, order, limit, cursor)
         return parse_model(TopAccountsResponseV3, await self._get(path, params))
 
     async def get_key_status(self) -> KeyStatusV3:
-        """Plan, credits, limits and how far back the key reads."""
         return parse_model(KeyStatusV3, await self._get("/v3/key-status"))
