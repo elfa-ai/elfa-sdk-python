@@ -52,13 +52,37 @@ See `AGENT.md` for complete architecture details. Key Claude Code considerations
 
 ### File Navigation Patterns
 When exploring the codebase, reference components by their file paths:
-- `elfa/client/elfa_client.py` - Sync `ElfaClient` (data + chat, `.auto`)
+- `elfa/client/elfa_client.py` - Sync `ElfaClient` (data + chat, `.auto`, `.v3`)
 - `elfa/client/async_client.py` - `AsyncElfaClient`
 - `elfa/client/auto_client.py` - Auto engine
+- `elfa/client/v3_client.py` - API v3 (`V3Client` / `AsyncV3Client`), models in `elfa/models/v3.py`
 - `elfa/client/_params.py` - shared data param builders
 - `elfa/utils/{http,sse}.py` - transport, SSE
 - `elfa/models/__init__.py` - All available Pydantic models
 - `elfa/exceptions/__init__.py` - Exception hierarchy
+
+### API v3
+`client.v3` covers the fourteen `/v3` `GET` endpoints: events, storylines and arcs; call
+books, mindshare and trending contracts; calls, call episodes and positioning; ranked
+accounts; key status.
+```python
+bitcoin = client.v3.get_entities("btc", entity_type=["token"], limit=1).entities[0]
+events = client.v3.get_events(entity_ids=[bitcoin.id], from_time=since, limit=10)
+positioning = client.v3.get_positioning(bitcoin.id)
+```
+Rules to respect in code and tests:
+- Times are unix seconds; milliseconds are a `400`. `from_time` is required except when
+  fetching by id or searching with `q`; entities, arcs, positioning and top accounts take
+  no range.
+- Entity filters take an id from `get_entities`, never a ticker or name.
+- History is 30 days, 60 days or 2 years back, by plan: `get_key_status().history_from`.
+- PAYG, Grow and Enterprise keys can call every v3 endpoint; a Free key only
+  `get_key_status()`, the rest answer `403` ("The v3 API is free on the Pay-as-you-go and
+  Grow plans. Upgrade at …").
+- Unknown parameters are a `400`: never send one the endpoint does not declare. Lists go
+  out comma-separated.
+- Chat takes `include_sources`; sources come back on `data.sources` or the stream's
+  `complete` event.
 
 ### Code Generation Guidelines
 - Always import required types from `elfa.models` and `elfa.exceptions`

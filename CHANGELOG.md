@@ -9,6 +9,51 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## Unreleased
+
+### Added
+
+- **API v3 on `client.v3`.** `ElfaClient.v3` (`V3Client`) and
+  `AsyncElfaClient.v3` (`AsyncV3Client`) cover the fourteen `/v3` endpoints,
+  sharing the parent's transport, retries, timeout, headers and `app_name`.
+  Both are also exported for standalone use, like `AutoClient`:
+  `get_entities`, `get_events`, `get_storylines`, `get_arcs`,
+  `get_call_book(market, ...)`, `get_mindshare(market, ...)`,
+  `get_trending_contracts`, `get_calls`, `get_call_episodes`,
+  `get_positioning(entity_id)`, `get_top_accounts` and `get_key_status`.
+  Parameters are snake_case (`from_time`/`to_time` for `from`/`to`), list
+  parameters take Python lists and are sent comma-separated, and only the
+  parameters you set are sent. Responses are typed in `elfa.models.v3`. PAYG,
+  Grow and Enterprise keys can call every v3 endpoint; a Free key can call only
+  `get_key_status`.
+- **`include_sources` on `chat` and `chat_stream`.** Sends `includeSources`;
+  the links the research read come back as `ChatResponse.data.sources` and as
+  `sources` on the stream's final `complete` event (`ChatSource`: `url`,
+  `kind`, optional `title`). `kind` is a plain string: treat a value you do not
+  recognise as `web`.
+
+### Removed
+
+- **`"gmx"` is no longer a `TradableExchange`.** The published
+  `GET /v2/auto/validate-symbol/{exchange}/{symbol}` enum is now
+  `hyperliquid | binance`. Passing `"gmx"` to `validate_symbol` now fails type
+  checking; this is a type-level breaking change only, and the API already
+  rejected it.
+
+### Changed
+
+- `swagger.json` refreshed from API `2.7.0` to the published `2.10.0`: adds
+  the `/v3` endpoints and chat `includeSources`, drops `gmx` from the exchange
+  enums and `/v2/data/market-events` from the spec. The SDK never wrapped
+  market events, so no method changes.
+
+### Fixed
+
+- **`ElfaValidationError.validation_errors` now carries the API's `details`.**
+  A `400` names the failing field in `details` (for example `query.from`,
+  `from is required`), and `message` alone often reads `Invalid parameters`.
+  The SDK only read an `errors` key, so `validation_errors` was always `None`.
+
 ## 6.0.0
 
 ### Removed

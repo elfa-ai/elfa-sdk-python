@@ -173,7 +173,11 @@ def raise_for_response(response: httpx.Response) -> None:
             request_id=request_id,
         )
     if status == 400:
-        errors = data.get("errors") if isinstance(data, dict) else None
+        errors = (
+            (data.get("errors") or data.get("details"))
+            if isinstance(data, dict)
+            else None
+        )
         raise ElfaValidationError(
             message, validation_errors=errors, status_code=400, request_id=request_id
         )

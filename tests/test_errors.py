@@ -38,6 +38,22 @@ def test_maps_400_with_validation_errors():
     assert exc.value.validation_errors == {"x": "y"}
 
 
+def test_maps_400_details_to_validation_errors():
+    details = [{"field": "query.from", "message": "from is required"}]
+    with pytest.raises(ElfaValidationError) as exc:
+        raise_for_response(
+            _response(
+                400,
+                {
+                    "code": "ERR_INVALID_PARAMETER",
+                    "message": "Invalid parameters",
+                    "details": details,
+                },
+            )
+        )
+    assert exc.value.validation_errors == details
+
+
 def test_maps_429_with_retry_after():
     with pytest.raises(ElfaRateLimitError) as exc:
         raise_for_response(_response(429, {"message": "slow"}, {"retry-after": "30"}))
