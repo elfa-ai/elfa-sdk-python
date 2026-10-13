@@ -9,7 +9,7 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
-## Unreleased
+## 6.1.0
 
 ### Added
 
@@ -37,8 +37,7 @@ They are not lockstep: an SDK-only fix ships in one without the other.
 - **`"gmx"` is no longer a `TradableExchange`.** The published
   `GET /v2/auto/validate-symbol/{exchange}/{symbol}` enum is now
   `hyperliquid | binance`. Passing `"gmx"` to `validate_symbol` now fails type
-  checking; this is a type-level breaking change only, and the API already
-  rejected it.
+  checking; the API already rejected it, so no working call changes.
 
 ### Changed
 
