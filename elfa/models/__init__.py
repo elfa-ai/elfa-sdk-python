@@ -163,7 +163,6 @@ __all__ = [
     "AutoValidateSymbolResponse",
     "AutoSuccessResponse",
     "AutoStreamEvent",
-    # API v3
     "MarketV3",
     "OrderV3",
     "EntityTypeV3",
