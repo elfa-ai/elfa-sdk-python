@@ -1,10 +1,11 @@
-"""Synchronous Elfa client: core data + AI chat, with ``.auto``."""
+"""Synchronous Elfa client: core data + AI chat, with ``.auto`` and ``.v3``."""
 
 from typing import Any, Dict, Iterator, Optional
 
 from elfa.client import _params as build
 from elfa.client.auto_client import AutoClient
 from elfa.client.base import chat_stream_event, parse_model
+from elfa.client.v3_client import V3Client
 from elfa.exceptions import ElfaAPIError, ElfaValidationError
 from elfa.models.chat import (
     ChatAnalysisType,
@@ -71,6 +72,7 @@ class ElfaClient:
             api_key, base_url, timeout, retries, retry_delay, headers, app_name=app_name
         )
         self.auto = AutoClient(transport=self._transport)
+        self.v3 = V3Client(transport=self._transport)
 
     def __enter__(self) -> "ElfaClient":
         return self
@@ -247,9 +249,10 @@ class ElfaClient:
         analysis_type: Optional[ChatAnalysisType] = None,
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
+        include_sources: Optional[bool] = None,
     ) -> ChatResponse:
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata
+            message, session_id, analysis_type, speed, asset_metadata, include_sources
         )
         data = self._transport.request_json(
             "POST", "/v2/chat", content=to_compact_json(body)
@@ -264,10 +267,11 @@ class ElfaClient:
         analysis_type: Optional[ChatAnalysisType] = None,
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
+        include_sources: Optional[bool] = None,
     ) -> Iterator[ChatStreamEvent]:
         """Stream a chat answer as SSE. Requires a PAYG or Enterprise API key."""
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata
+            message, session_id, analysis_type, speed, asset_metadata, include_sources
         )
         with self._transport.stream_lines(
             "POST",

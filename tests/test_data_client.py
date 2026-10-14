@@ -125,6 +125,57 @@ def test_chat_posts_compact_body():
     client.close()
 
 
+@respx.mock
+def test_chat_include_sources_sends_flag_and_parses_sources():
+    route = respx.post(f"{BASE_URL}/v2/chat").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {
+                    "message": "hi",
+                    "sessionId": "s",
+                    "creditsConsumed": 1,
+                    "sources": [
+                        {
+                            "url": "https://x.com/a/status/1",
+                            "kind": "x_post",
+                            "title": "Searched X",
+                        },
+                        {"url": "https://example.com", "kind": "new_kind"},
+                    ],
+                },
+            },
+        )
+    )
+    client = _client()
+    result = client.chat("hello", include_sources=True)
+    body = route.calls[-1].request.content.decode()
+    assert body == '{"message":"hello","includeSources":true}'
+    sources = result.data.sources
+    assert sources is not None
+    assert [source.kind for source in sources] == ["x_post", "new_kind"]
+    assert sources[0].title == "Searched X"
+    assert sources[1].title is None
+    client.close()
+
+
+@respx.mock
+def test_chat_without_include_sources_has_no_sources():
+    respx.post(f"{BASE_URL}/v2/chat").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"message": "hi", "sessionId": "s", "creditsConsumed": 1},
+            },
+        )
+    )
+    client = _client()
+    assert client.chat("hello").data.sources is None
+    client.close()
+
+
 def test_chat_requires_message_for_chat_analysis():
     client = _client()
     with pytest.raises(ElfaValidationError):
@@ -275,6 +326,13 @@ _STREAM_BODY = (
     'data: {"type":"text","content":"after"}\n\n'
 )
 
+_SOURCES_STREAM_BODY = (
+    'data: {"type":"text","content":"he"}\n\n'
+    'data: {"type":"complete","success":true,"sessionId":"s1","creditsConsumed":3,'
+    '"sources":[{"url":"https://x.com/a/status/1","kind":"x_post"}]}\n\n'
+    "data: [DONE]\n\n"
+)
+
 
 @respx.mock
 def test_chat_stream_posts_body_and_yields_typed_events():
@@ -312,3 +370,61 @@ async def test_async_chat_stream_yields_typed_events():
     assert [event.type for event in events] == ["session_info", "text", "complete"]
     assert events[2].sessionId == "s1"
     await client.close()
+
+
+@respx.mock
+def test_chat_stream_include_sources_on_complete_event():
+    route = respx.post(f"{BASE_URL}/v2/chat/stream").mock(
+        return_value=httpx.Response(200, text=_SOURCES_STREAM_BODY)
+    )
+    client = _client()
+    events = list(client.chat_stream("hello", include_sources=True))
+
+    body = route.calls[-1].request.content.decode()
+    assert body == '{"message":"hello","includeSources":true}'
+    assert events[0].sources is None
+    assert events[-1].type == "complete"
+    assert events[-1].sources is not None
+    assert events[-1].sources[0].url == "https://x.com/a/status/1"
+    client.close()
+
+
+@respx.mock
+async def test_async_chat_include_sources_sends_flag():
+    route = respx.post(f"{BASE_URL}/v2/chat").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {
+                    "message": "hi",
+                    "sessionId": "s",
+                    "creditsConsumed": 1,
+                    "sources": [],
+                },
+            },
+        )
+    )
+    async with AsyncElfaClient(api_key="k", base_url=BASE_URL, retries=0) as client:
+        result = await client.chat("hello", include_sources=False)
+    assert route.calls[-1].request.content.decode() == (
+        '{"message":"hello","includeSources":false}'
+    )
+    assert result.data.sources == []
+
+
+def test_chat_stream_event_survives_malformed_sources():
+    from elfa.client.base import chat_stream_event
+    from elfa.utils.sse import SSEMessage
+
+    event = chat_stream_event(
+        SSEMessage(
+            event="message",
+            data='{"type": "complete", "sources": [{"kind": "web"}]}',
+            id=None,
+        )
+    )
+
+    assert event is not None
+    assert event.type == "complete"
+    assert event.sources is None

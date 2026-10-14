@@ -78,6 +78,10 @@ examples-auto:
 	@echo "Running auto example:"
 	python examples/auto_usage.py
 
+examples-v3:
+	@echo "Running v3 example:"
+	python examples/v3_usage.py
+
 # CI/CD simulation
 ci: install-dev lint type-check test-coverage
 	@echo "✅ All CI checks passed!"

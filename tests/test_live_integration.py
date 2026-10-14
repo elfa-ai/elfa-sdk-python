@@ -1,11 +1,13 @@
 """Gated live integration tests against a real Elfa API.
 
 Skipped unless ``ELFA_API_KEY`` is set. Optional env:
-``ELFA_BASE_URL``, ``ELFA_STAGING_SECRET``, and
-``ELFA_CHAT_STREAM=1`` to exercise chat streaming on a PAYG or Enterprise key.
+``ELFA_BASE_URL``, ``ELFA_STAGING_SECRET``,
+``ELFA_CHAT_STREAM=1`` to exercise chat streaming on a PAYG or Enterprise key, and
+``ELFA_V3=1`` to exercise API v3 on a PAYG, Grow or Enterprise key.
 """
 
 import os
+import time
 
 import pytest
 
@@ -114,3 +116,24 @@ def test_chat_stream_yields_events(client):
     events = [event.type for event in client.chat_stream("what is bitcoin")]
     assert events
     assert events[-1] == "complete"
+
+
+def test_v3_key_status(client):
+    assert client.v3.get_key_status().history_from > 0
+
+
+@pytest.mark.skipif(
+    not os.environ.get("ELFA_V3"),
+    reason="requires a PAYG, Grow or Enterprise key (set ELFA_V3=1)",
+)
+def test_v3_entities_events_positioning(client):
+    entities = client.v3.get_entities("btc", entity_type=["token"], limit=1)
+    assert entities.entities
+    entity_id = entities.entities[0].id
+
+    since = int(time.time()) - 86400
+    events = client.v3.get_events(entity_ids=[entity_id], from_time=since, limit=3)
+    assert isinstance(events.events, list)
+
+    positioning = client.v3.get_positioning(entity_id)
+    assert positioning.id == entity_id

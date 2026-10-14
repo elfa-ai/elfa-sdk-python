@@ -43,7 +43,10 @@ def chat_stream_event(message: SSEMessage) -> Optional[ChatStreamEvent]:
         return None
     if not isinstance(payload, dict) or not isinstance(payload.get("type"), str):
         return None
-    return ChatStreamEvent.model_validate(payload)
+    try:
+        return ChatStreamEvent.model_validate(payload)
+    except ValidationError:
+        return ChatStreamEvent.model_validate({**payload, "sources": None})
 
 
 class MountedClient:

@@ -1,10 +1,11 @@
-"""Asynchronous Elfa client: core data + AI chat, with ``.auto``."""
+"""Asynchronous Elfa client: core data + AI chat, with ``.auto`` and ``.v3``."""
 
 from typing import Any, AsyncIterator, Dict, Optional
 
 from elfa.client import _params as build
 from elfa.client.auto_client import AsyncAutoClient
 from elfa.client.base import chat_stream_event, parse_model
+from elfa.client.v3_client import AsyncV3Client
 from elfa.exceptions import ElfaAPIError, ElfaValidationError
 from elfa.models.chat import (
     ChatAnalysisType,
@@ -61,6 +62,7 @@ class AsyncElfaClient:
             api_key, base_url, timeout, retries, retry_delay, headers, app_name=app_name
         )
         self.auto = AsyncAutoClient(transport=self._transport)
+        self.v3 = AsyncV3Client(transport=self._transport)
 
     async def __aenter__(self) -> "AsyncElfaClient":
         return self
@@ -237,9 +239,10 @@ class AsyncElfaClient:
         analysis_type: Optional[ChatAnalysisType] = None,
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
+        include_sources: Optional[bool] = None,
     ) -> ChatResponse:
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata
+            message, session_id, analysis_type, speed, asset_metadata, include_sources
         )
         data = await self._transport.request_json(
             "POST", "/v2/chat", content=to_compact_json(body)
@@ -254,10 +257,11 @@ class AsyncElfaClient:
         analysis_type: Optional[ChatAnalysisType] = None,
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
+        include_sources: Optional[bool] = None,
     ) -> AsyncIterator[ChatStreamEvent]:
         """Stream a chat answer as SSE. Requires a PAYG or Enterprise API key."""
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata
+            message, session_id, analysis_type, speed, asset_metadata, include_sources
         )
         async with self._transport.stream_lines(
             "POST",

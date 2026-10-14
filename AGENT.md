@@ -4,7 +4,7 @@ This file provides base instructions for all AI coding assistants (Claude Code, 
 
 ## Project Overview
 
-**Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, and the Auto condition engine for crypto. V2-only (no V1 surface).
+**Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, the Auto condition engine, and API v3. Covers v2 and v3 (no V1 surface).
 
 ### Technology Stack
 - **Language**: Python 3.9+
@@ -45,11 +45,39 @@ The SDK returns processed metadata and tweet links only — never raw tweet text
 For raw content, call the X (Twitter) API directly with those links/ids.
 
 ### Client Structure
-- **Sync Client**: `ElfaClient` - data + AI chat (`chat`, `chat_stream`), with `.auto`
+- **Sync Client**: `ElfaClient` - data + AI chat (`chat`, `chat_stream`, both take `include_sources`), with `.auto` and `.v3`
 - **Async Client**: `AsyncElfaClient` - async mirror of `ElfaClient`
 - **Auto engine**: `AutoClient` / `AsyncAutoClient` (`/v2/auto/*`) - EQL queries, drafts, sessions, executions, SSE streams
+- **API v3**: `V3Client` / `AsyncV3Client` (`/v3/*`) - one `GET` method per endpoint, sharing the parent transport
 - **Transport**: `SyncTransport` / `AsyncTransport` (retries, error mapping, SSE)
 - **Bodies**: Auto mutations send compact JSON via httpx `content=`, never `json=`.
+
+### API v3
+`client.v3` (`V3Client` / `AsyncV3Client`, `/v3/*`) is the data stack that powers agent
+awareness: events, storylines and arcs; call books, mindshare and trending contracts;
+calls, call episodes and positioning; ranked accounts. One `GET` method per endpoint,
+param mapping in `_params.py` (`v3_*` builders), models in `elfa/models/v3.py`.
+```python
+import time
+
+entities = client.v3.get_entities("btc", entity_type=["token"], limit=1)
+bitcoin = entities.entities[0]  # check bitcoin.name before relying on it
+since = int(time.time()) - 86400
+events = client.v3.get_events(entity_ids=[bitcoin.id], from_time=since, limit=10)
+positioning = client.v3.get_positioning(bitcoin.id)
+```
+- Times are unix seconds, UTC. Milliseconds are a `400`.
+- `from_time` is required except when fetching by id or searching with `q`;
+  `get_events(sort="relevant")` refuses it. Entities,
+  arcs, positioning and top accounts take no range; mindshare takes `period` + `to_time`.
+- Entity filters take an id from `get_entities`, never a ticker or name.
+- History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`
+  returns the start, and `served_from` says where an earlier `from_time` was cut.
+- PAYG, Grow and Enterprise keys can call every v3 endpoint. A Free key can call only
+  `get_key_status()`; the rest answer `403` ("The v3 API is free on the Pay-as-you-go
+  and Grow plans. Upgrade at …").
+- Unknown parameters are a `400`, never ignored: send only what the endpoint declares.
+  Lists go out comma-separated, at most 30 ids.
 
 ### Error Handling Pattern
 ```python
@@ -117,9 +145,10 @@ async def test_async_method():
 elfa/
 ├── __init__.py          # Main package exports
 ├── client/              # Client implementations
-│   ├── elfa_client.py   # Sync data + chat client (.auto)
+│   ├── elfa_client.py   # Sync data + chat client (.auto, .v3)
 │   ├── async_client.py  # Async mirror
 │   ├── auto_client.py   # AutoClient / AsyncAutoClient
+│   ├── v3_client.py     # V3Client / AsyncV3Client
 │   ├── base.py          # MountedClient + parse helpers
 │   └── _params.py       # shared data param builders
 ├── models/              # Pydantic data models

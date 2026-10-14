@@ -1,6 +1,7 @@
 """Auto client: paths, param mapping, and SSE streaming."""
 
 from contextlib import asynccontextmanager, contextmanager
+from typing import get_args
 
 import httpx
 import pytest
@@ -8,6 +9,7 @@ import respx
 
 from elfa.client.auto_client import AsyncAutoClient, AutoClient
 from elfa.exceptions import ElfaValidationError
+from elfa.models.auto import TradableExchange
 from elfa.utils.http import AsyncTransport, SyncTransport
 from tests.conftest import BASE_URL
 
@@ -97,6 +99,10 @@ def test_validate_symbol_url_encodes_symbol():
     )
     assert result.supported == "true"
     assert "BTC%2FUSD" in str(route.calls[-1].request.url)
+
+
+def test_tradable_exchange_no_longer_lists_gmx():
+    assert get_args(TradableExchange) == ("hyperliquid", "binance")
 
 
 @respx.mock

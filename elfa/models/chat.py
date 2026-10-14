@@ -1,5 +1,7 @@
 """Models for the AI chat endpoints."""
 
+from typing import List, Optional
+
 from pydantic import Field
 from typing_extensions import Literal, TypedDict
 
@@ -18,10 +20,17 @@ class ChatAssetMetadata(TypedDict, total=False):
     username: str
 
 
+class ChatSource(ElfaModel):
+    url: str
+    kind: str
+    title: Optional[str] = None
+
+
 class ChatData(ElfaModel):
     message: str
     session_id: str = Field(alias="sessionId")
     credits_consumed: int = Field(alias="creditsConsumed")
+    sources: Optional[List[ChatSource]] = None
 
 
 class ChatResponse(ElfaModel):
@@ -33,3 +42,4 @@ class ChatStreamEvent(ElfaModel):
     """One ``data:`` frame from the chat stream; payload fields arrive as extras."""
 
     type: str
+    sources: Optional[List[ChatSource]] = None
