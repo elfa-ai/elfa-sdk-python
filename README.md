@@ -250,6 +250,7 @@ Rules every v3 endpoint follows:
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
 - **History** is 30 days, 60 days or 2 years back, by plan. `get_key_status().history_from` returns the start; an earlier `from_time` is cut, and `served_from` says where.
+- **Top accounts by track record.** `get_top_accounts(metric=...)` ranks by `standing` (the default) or by a caller's track: `alphaScore`, `hitRate` or `avgReturn`. For the best callers use `alphaScore`; `avgReturn` is not adjusted for the market. Track metrics rank only accounts with at least 20 scored positions.
 - **Paging.** Pass `next_cursor` back as `cursor`. `has_more=False` and `next_cursor=None` mark the last page. A cursor belongs to its query.
 - **Lists.** List parameters (`entity_ids`, `entity_type`, `alert_action`, `relation` and the id lists) take Python lists and are sent comma-separated. At most 30 ids. An empty list raises `ElfaValidationError` rather than silently dropping the filter.
 - **Unknown parameters are a `400`**, never ignored. The SDK sends only the parameters you set.

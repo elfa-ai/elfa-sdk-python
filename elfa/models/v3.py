@@ -48,7 +48,7 @@ ArcSortV3 = Literal["latest", "storylines", "events"]
 MindsharePeriodV3 = Literal["1h", "4h", "24h", "7d"]
 CallStatusV3 = Literal["open", "closed"]
 CallDirectionV3 = Literal["long", "short"]
-AccountMetricV3 = Literal["standing"]
+AccountMetricV3 = Literal["standing", "alphaScore", "hitRate", "avgReturn"]
 
 
 class ExternalIdsV3(ElfaModel):
