@@ -1,8 +1,13 @@
 """Models for the AI chat endpoints."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from pydantic import Field
+from pydantic import (
+    Field,
+    ValidationError,
+    ValidatorFunctionWrapHandler,
+    field_validator,
+)
 from typing_extensions import Literal, TypedDict
 
 from elfa.models.base import ElfaModel
@@ -26,11 +31,20 @@ class ChatSource(ElfaModel):
     title: Optional[str] = None
 
 
+def _sources_or_none(value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+    try:
+        return handler(value)
+    except ValidationError:
+        return None
+
+
 class ChatData(ElfaModel):
     message: str
     session_id: str = Field(alias="sessionId")
     credits_consumed: int = Field(alias="creditsConsumed")
     sources: Optional[List[ChatSource]] = None
+
+    _drop_malformed_sources = field_validator("sources", mode="wrap")(_sources_or_none)
 
 
 class ChatResponse(ElfaModel):
@@ -43,3 +57,5 @@ class ChatStreamEvent(ElfaModel):
 
     type: str
     sources: Optional[List[ChatSource]] = None
+
+    _drop_malformed_sources = field_validator("sources", mode="wrap")(_sources_or_none)

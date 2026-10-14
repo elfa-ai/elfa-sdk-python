@@ -1,11 +1,14 @@
 """API v3 client: paths, exact query params, parsing, and errors."""
 
+from typing import get_args
+
 import httpx
 import pytest
 import respx
 
 from elfa import AsyncElfaClient, AsyncV3Client, ElfaClient, V3Client
 from elfa.exceptions import ElfaAPIError, ElfaValidationError
+from elfa.models import AccountMetricV3
 from elfa.utils.http import AsyncTransport, SyncTransport
 from tests.conftest import BASE_URL
 
@@ -243,7 +246,7 @@ def test_empty_list_raises_instead_of_dropping_the_filter():
     route = respx.get(f"{BASE_URL}/v3/events").mock(
         return_value=httpx.Response(200, json=_page("events", [EVENT]))
     )
-    with pytest.raises(ElfaValidationError, match="empty list"):
+    with pytest.raises(ElfaValidationError, match="entity_ids is empty"):
         _client().get_events(from_time=1, entity_ids=[])
 
     assert not route.called
@@ -559,6 +562,15 @@ def test_get_top_accounts_maps_params_and_parses():
     assert account.handle == "blknoiz06"
     assert account.standing == 1.0
     assert account.track is None
+
+
+def test_account_metric_matches_spec():
+    assert get_args(AccountMetricV3) == (
+        "standing",
+        "alphaScore",
+        "hitRate",
+        "avgReturn",
+    )
 
 
 @respx.mock

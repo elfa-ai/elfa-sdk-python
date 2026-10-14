@@ -22,6 +22,13 @@ They are not lockstep: an SDK-only fix ships in one without the other.
 ### Changed
 
 - `swagger.json` refreshed from API `2.10.0` to the published `2.11.0`.
+- The empty-list `ElfaValidationError` names the parameter, e.g.
+  `entity_ids is empty, which would drop the filter.`
+
+### Fixed
+
+- `chat()` drops a malformed `sources` list instead of raising, as `chat_stream()`
+  already did, so a bad source entry never costs you the answer.
 
 ## 6.1.0
 

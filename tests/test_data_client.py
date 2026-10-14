@@ -176,6 +176,29 @@ def test_chat_without_include_sources_has_no_sources():
     client.close()
 
 
+@respx.mock
+def test_chat_survives_malformed_sources():
+    respx.post(f"{BASE_URL}/v2/chat").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {
+                    "message": "hi",
+                    "sessionId": "s",
+                    "creditsConsumed": 1,
+                    "sources": [{"kind": "web"}],
+                },
+            },
+        )
+    )
+    client = _client()
+    result = client.chat("hello", include_sources=True)
+    assert result.data.message == "hi"
+    assert result.data.sources is None
+    client.close()
+
+
 def test_chat_requires_message_for_chat_analysis():
     client = _client()
     with pytest.raises(ElfaValidationError):

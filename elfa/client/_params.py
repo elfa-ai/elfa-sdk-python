@@ -204,12 +204,13 @@ def chat_body(
     )
 
 
-def _csv(values: Optional[Sequence[str]]) -> Optional[str]:
+def _csv(name: str, values: Optional[Sequence[str]]) -> Optional[str]:
     if values is None:
         return None
     if not values:
         raise ElfaValidationError(
-            "An empty list would drop the filter. Omit it, or pass at least one value."
+            f"{name} is empty, which would drop the filter. "
+            "Omit it, or pass at least one value."
         )
     if isinstance(values, str):
         return values
@@ -233,7 +234,7 @@ def v3_entities(
     return "/v3/entities", drop_none(
         {
             "q": q,
-            "entityType": _csv(entity_type),
+            "entityType": _csv("entity_type", entity_type),
             "limit": limit,
             "cursor": cursor,
         }
@@ -265,14 +266,14 @@ def v3_events(
             "q": q,
             "from": from_time,
             "to": to_time,
-            "eventIds": _csv(event_ids),
+            "eventIds": _csv("event_ids", event_ids),
             "eventClass": event_class,
             "eventType": event_type,
             "implication": implication,
-            "entityIds": _csv(entity_ids),
+            "entityIds": _csv("entity_ids", entity_ids),
             "assetClass": asset_class,
             "novelty": novelty,
-            "alertAction": _csv(alert_action),
+            "alertAction": _csv("alert_action", alert_action),
             "sort": sort,
             "hasStoryline": has_storyline,
             "arcId": arc_id,
@@ -301,10 +302,10 @@ def v3_storylines(
             "q": q,
             "from": from_time,
             "to": to_time,
-            "storylineIds": _csv(storyline_ids),
-            "entityIds": _csv(entity_ids),
+            "storylineIds": _csv("storyline_ids", storyline_ids),
+            "entityIds": _csv("entity_ids", entity_ids),
             "status": status,
-            "relation": _csv(relation),
+            "relation": _csv("relation", relation),
             "order": order,
             "limit": limit,
             "cursor": cursor,
@@ -326,10 +327,10 @@ def v3_arcs(
     return "/v3/events/arcs", drop_none(
         {
             "q": q,
-            "arcIds": _csv(arc_ids),
+            "arcIds": _csv("arc_ids", arc_ids),
             "status": status,
             "assetClass": asset_class,
-            "entityIds": _csv(entity_ids),
+            "entityIds": _csv("entity_ids", entity_ids),
             "sort": sort,
             "order": order,
             "limit": limit,
@@ -401,9 +402,9 @@ def v3_calls(
         {
             "from": from_time,
             "to": to_time,
-            "callIds": _csv(call_ids),
+            "callIds": _csv("call_ids", call_ids),
             "handle": handle,
-            "entityIds": _csv(entity_ids),
+            "entityIds": _csv("entity_ids", entity_ids),
             "order": order,
             "limit": limit,
             "cursor": cursor,
@@ -428,9 +429,9 @@ def v3_call_episodes(
         {
             "from": from_time,
             "to": to_time,
-            "episodeIds": _csv(episode_ids),
+            "episodeIds": _csv("episode_ids", episode_ids),
             "handle": handle,
-            "entityIds": _csv(entity_ids),
+            "entityIds": _csv("entity_ids", entity_ids),
             "status": status,
             "direction": direction,
             "assetClass": asset_class,
