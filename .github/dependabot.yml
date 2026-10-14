@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # GitHub Actions only. Python dependencies are deliberately not tracked:
+  # pyproject.toml declares `>=` floors with no lockfile, so CI already installs
+  # the latest releases on every run. In a library, Dependabot would only raise
+  # those floors, narrowing what versions SDK users can install alongside their
+  # own dependencies. pip-audit in CI audits the runtime dependencies only, not
+  # the `dev` extra; dev tools are never shipped and CI always takes their
+  # newest release, which is the version a Dependabot bump would move to.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
