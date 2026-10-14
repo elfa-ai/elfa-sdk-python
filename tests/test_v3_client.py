@@ -562,6 +562,17 @@ def test_get_top_accounts_maps_params_and_parses():
 
 
 @respx.mock
+@pytest.mark.parametrize("metric", ["alphaScore", "hitRate", "avgReturn"])
+def test_get_top_accounts_ranks_by_track_metric(metric):
+    route = respx.get(f"{BASE_URL}/v3/people/accounts").mock(
+        return_value=httpx.Response(200, json=_page("accounts", [ACCOUNT], False))
+    )
+    _client().get_top_accounts(metric=metric, limit=2)
+
+    assert _params(route) == {"metric": metric, "limit": "2"}
+
+
+@respx.mock
 def test_get_key_status_sends_no_params_and_parses():
     route = respx.get(f"{BASE_URL}/v3/key-status").mock(
         return_value=httpx.Response(200, json=KEY_STATUS)

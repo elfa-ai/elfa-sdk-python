@@ -9,6 +9,20 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## 6.2.0
+
+### Added
+
+- **Rank top accounts by track record.** `AccountMetricV3` now takes
+  `alphaScore`, `hitRate` and `avgReturn` beside `standing` (API 2.11.0), so
+  `client.v3.get_top_accounts(metric="alphaScore")` type-checks. Track metrics
+  rank only accounts with at least 20 scored positions, and a `next_cursor`
+  works only with the `metric` and `order` it came from.
+
+### Changed
+
+- `swagger.json` refreshed from API `2.10.0` to the published `2.11.0`.
+
 ## 6.1.0
 
 ### Added
