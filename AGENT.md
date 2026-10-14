@@ -9,7 +9,7 @@ Everything here is world-readable and permanent: code, comments, commit messages
 - names of Elfa's private repositories, or links to their PRs, issues or commits (`org/repo#123`, `repo#123`, URLs)
 - internal service names or codenames. Name the public thing instead: "the API", "Auto", "the published spec", "docs.elfa.ai"
 - paths into private source code, internal hostnames, staging or preview URLs
-- teammates' names, internal threads or decisions ("X confirmed in-thread")
+- teammates' names in prose, internal threads or decisions ("X confirmed in-thread"). A `Co-authored-by:` trailer crediting a contributor is fine and must be kept
 - anything not yet live on docs.elfa.ai: unreleased, flag-gated or staging-only work
 - deployment, infrastructure, incident or business detail
 - secrets, local machine paths, personal editor or agent config (`.mcp.json`, `.claude/`)
