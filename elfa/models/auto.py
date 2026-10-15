@@ -26,9 +26,18 @@ class AutoChatResponse(ElfaModel):
     credits: Optional[float] = None
 
 
-class AutoEstimatedCost(ElfaModel):
-    credits: float
-    price: str
+class AutoTweetAccount(ElfaModel):
+    path: str
+    username: str
+    account_source_ref_id: str = Field(alias="accountSourceRefId")
+    billing: str
+    credits_per_post: Optional[float] = Field(None, alias="creditsPerPost")
+
+
+class AutoQueryFailure(ElfaModel):
+    code: str
+    message: Optional[str] = None
+    source: str
 
 
 class AutoValidateResponse(ElfaModel):
@@ -36,7 +45,9 @@ class AutoValidateResponse(ElfaModel):
     errors: List[Any] = Field(default_factory=list)
     warnings: List[Any] = Field(default_factory=list)
     estimated_credits: Optional[float] = Field(None, alias="estimatedCredits")
-    estimated_cost: Optional[AutoEstimatedCost] = Field(None, alias="estimatedCost")
+    tweet_accounts: Optional[List[AutoTweetAccount]] = Field(
+        None, alias="tweetAccounts"
+    )
 
 
 class AutoQuery(ElfaModel):
@@ -46,6 +57,9 @@ class AutoQuery(ElfaModel):
     query_id: Optional[str] = Field(None, alias="queryId")
     status: Optional[str] = None
     estimated_credits: Optional[float] = Field(None, alias="estimatedCredits")
+    tweet_accounts: Optional[List[AutoTweetAccount]] = Field(
+        None, alias="tweetAccounts"
+    )
 
 
 class AutoListQueriesResponse(ElfaModel):
@@ -78,6 +92,7 @@ class AutoPollQueryResponse(ElfaModel):
     )
     executions: List[AutoQueryExecution] = Field(default_factory=list)
     credits: Optional[float] = None
+    failure: Optional[AutoQueryFailure] = None
 
 
 class AutoDraft(ElfaModel):
