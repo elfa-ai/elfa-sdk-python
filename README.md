@@ -179,6 +179,8 @@ client.auto.cancel_query(query_id)
 client.auto.delete_query(query_id)
 ```
 
+A `tweet` condition can watch any public X account. `validate_query` returns `tweet_accounts`, saying how each one is billed: `included` costs nothing extra, `per_post` costs `credits_per_post` for every post while the query runs, on top of `estimated_credits`. A failed query's `get_query` carries `failure` with the reason.
+
 Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, and `validate_symbol`.
 
 Builder Chat is dynamically priced, so it reports what the turn cost:
@@ -245,7 +247,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every v3 endpoint follows:
 
-- **Access.** PAYG, Grow and Enterprise keys can call every v3 endpoint. A Free key can call only `get_key_status()`; the rest raise `ElfaAPIError` with status `403`: `The v3 API is free on the Pay-as-you-go and Grow plans. Upgrade at …`.
+- **Access.** PAYG, Grow and Enterprise keys can call every v3 endpoint, free on Pay-as-you-go and Grow until 31 October 2026. A Free key can call only `get_key_status()`; the rest raise `ElfaAPIError` with status `403`: `The v3 API is free on the Pay-as-you-go and Grow plans. Upgrade at …`.
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
@@ -256,7 +258,7 @@ Rules every v3 endpoint follows:
 - **Unknown parameters are a `400`**, never ignored. The SDK sends only the parameters you set.
 - No endpoint returns post text.
 
-`V3Client` and `AsyncV3Client` are also constructable standalone, like `AutoClient`. See the [API v3 docs](https://docs.elfa.ai/v3/overview) for every parameter and field.
+`V3Client` and `AsyncV3Client` are also constructable standalone, like `AutoClient`. See the [API v3 docs](https://docs.elfa.ai/api/v3/overview) for every parameter and field.
 
 ## Error handling
 

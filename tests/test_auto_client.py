@@ -76,6 +76,69 @@ def test_get_query_parses_poll_response():
     result = AutoClient(transport=_transport()).get_query("q1")
     assert result.query_id == "q1"
     assert result.status == "active"
+    assert result.failure is None
+
+
+@respx.mock
+def test_get_query_parses_failure():
+    respx.get(f"{BASE_URL}/v2/auto/queries/q1").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "queryId": "q1",
+                "status": "failed",
+                "latestEvaluation": None,
+                "executions": [],
+                "failure": {
+                    "code": "SUBSCRIPTION_CREDITS_EXHAUSTED",
+                    "message": None,
+                    "source": "billing",
+                },
+            },
+        )
+    )
+    result = AutoClient(transport=_transport()).get_query("q1")
+    assert result.failure is not None
+    assert result.failure.code == "SUBSCRIPTION_CREDITS_EXHAUSTED"
+    assert result.failure.message is None
+    assert result.failure.source == "billing"
+
+
+@respx.mock
+def test_validate_query_parses_tweet_accounts():
+    respx.post(f"{BASE_URL}/v2/auto/queries/validate").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "errors": [],
+                "warnings": [],
+                "estimatedCredits": 0,
+                "tweetAccounts": [
+                    {
+                        "path": "conditions.OR[0]",
+                        "username": "cz_binance",
+                        "accountSourceRefId": "902926941413453824",
+                        "billing": "included",
+                    },
+                    {
+                        "path": "conditions.OR[1]",
+                        "username": "nasa",
+                        "accountSourceRefId": "11348282",
+                        "billing": "per_post",
+                        "creditsPerPost": 1,
+                    },
+                ],
+            },
+        )
+    )
+    result = AutoClient(transport=_transport()).validate_query({"query": {}})
+    assert result.tweet_accounts is not None
+    included, per_post = result.tweet_accounts
+    assert included.billing == "included"
+    assert included.credits_per_post is None
+    assert per_post.account_source_ref_id == "11348282"
+    assert per_post.credits_per_post == 1
 
 
 @respx.mock

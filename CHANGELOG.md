@@ -9,6 +9,31 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## 6.3.0
+
+### Added
+
+- **X accounts on Auto validate and create** (API 2.12.0). `AutoValidateResponse`
+  and `AutoQuery` carry `tweet_accounts: List[AutoTweetAccount]`, one per `tweet`
+  condition, with `billing` (`included` or `per_post`) and `credits_per_post`. A
+  `per_post` account costs that much for every post while the query runs, on top of
+  `estimated_credits`.
+- **`failure` on poll** (API 2.12.0). `get_query()` returns
+  `failure: AutoQueryFailure` (`code`, `message`, `source`) when a query ended as
+  `failed`.
+
+### Changed
+
+- README: API v3 is free on Pay-as-you-go and Grow until 31 October 2026, and the v3
+  link points at `docs.elfa.ai/api/v3/overview`.
+- `swagger.json` refreshed to the published API `3.0.0`.
+
+### Removed
+
+- `AutoEstimatedCost` and `AutoValidateResponse.estimated_cost`. The API returns
+  `estimatedCost` only on x402, never to an API key, so it was never set;
+  `estimated_credits` is the estimate.
+
 ## 6.2.0
 
 ### Added
