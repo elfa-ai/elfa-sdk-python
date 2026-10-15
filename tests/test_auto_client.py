@@ -299,3 +299,32 @@ async def test_async_stream_all_maps_events():
     events = [event async for event in client.stream_all()]
     assert [event.event for event in events] == ["update", "end"]
     assert events[0].data == {"n": 1}
+
+
+@respx.mock
+def test_create_query_parses_tweet_accounts():
+    respx.post(f"{BASE_URL}/v2/auto/queries").mock(
+        return_value=httpx.Response(
+            201,
+            json={
+                "id": "q1",
+                "status": "active",
+                "estimatedCredits": 116,
+                "tweetAccounts": [
+                    {
+                        "path": "conditions.AND[0]",
+                        "username": "nasa",
+                        "accountSourceRefId": "11348282",
+                        "billing": "per_post",
+                        "creditsPerPost": 1,
+                    }
+                ],
+            },
+        )
+    )
+    result = AutoClient(transport=_transport()).create_query({"query": {}})
+    assert result.id == "q1"
+    assert result.estimated_credits == 116
+    assert result.tweet_accounts is not None
+    assert result.tweet_accounts[0].billing == "per_post"
+    assert result.tweet_accounts[0].credits_per_post == 1

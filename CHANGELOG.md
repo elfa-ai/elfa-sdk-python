@@ -14,13 +14,13 @@ They are not lockstep: an SDK-only fix ships in one without the other.
 ### Added
 
 - **X accounts on Auto validate and create** (API 2.12.0). `AutoValidateResponse`
-  and `AutoQuery` carry `tweet_accounts: List[AutoTweetAccount]`, one per `tweet`
-  condition, with `billing` (`included` or `per_post`) and `credits_per_post`. A
-  `per_post` account costs that much for every post while the query runs, on top of
-  `estimated_credits`.
+  and `AutoQuery` carry `tweet_accounts: Optional[List[AutoTweetAccount]]`, one per
+  `tweet` condition (`None` when the query has none, or failed an earlier check), with `billing` (`included` or `per_post`) and `credits_per_post`. A
+  `per_post` account costs that much for each post (not replies or reposts) while
+  the query runs, on top of `estimated_credits`.
 - **`failure` on poll** (API 2.12.0). `get_query()` returns
-  `failure: AutoQueryFailure` (`code`, `message`, `source`) when a query ended as
-  `failed`.
+  `failure: AutoQueryFailure` (`code`, `message`, `source`) when a query failed with
+  a recorded reason.
 
 ### Changed
 
@@ -32,7 +32,8 @@ They are not lockstep: an SDK-only fix ships in one without the other.
 
 - `AutoEstimatedCost` and `AutoValidateResponse.estimated_cost`. The API returns
   `estimatedCost` only on x402, never to an API key, so it was never set;
-  `estimated_credits` is the estimate.
+  `estimated_credits` is the estimate. Importing `AutoEstimatedCost` now raises
+  `ImportError`: drop the import.
 
 ## 6.2.0
 

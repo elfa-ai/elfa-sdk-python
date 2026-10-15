@@ -179,7 +179,7 @@ client.auto.cancel_query(query_id)
 client.auto.delete_query(query_id)
 ```
 
-A `tweet` condition can watch any public X account. `validate_query` returns `tweet_accounts`, saying how each one is billed: `included` costs nothing extra, `per_post` costs `credits_per_post` for every post while the query runs, on top of `estimated_credits`. A failed query's `get_query` carries `failure` with the reason.
+A `tweet` condition can watch any public X account; one outside Elfa's real-time set needs a paid API key, and Builder Chat drafts only real-time accounts. `validate_query` and `create_query` return `tweet_accounts`, saying how each is billed: `included` costs nothing extra, `per_post` costs `credits_per_post` for each post (not replies or reposts) while the query runs. Those charges are not in `estimated_credits` or `x-elfa-credits`; `get_api_key_status()` shows them. An account that can't be watched comes back as a validation error with `details.reason`. When a query fails with a recorded reason, `get_query` carries it in `failure`. See [X Accounts and Per-Post Billing](https://docs.elfa.ai/auto/signal#x-accounts-and-per-post-billing).
 
 Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, and `validate_symbol`.
 
