@@ -33,6 +33,10 @@ classifiers = [
 
 dependencies = [
     "httpx>=0.24.0",
+    # httpx verifies TLS against certifi's bundle. 2026.10.19 drops emSign ECC
+    # Root CA - G3, whose intermediates' private keys were exposed (Mozilla bug
+    # 2083449); older bundles still trust certificates minted from them.
+    "certifi>=2026.10.19",
     "pydantic>=2.0.0",
     "typing-extensions>=4.0.0",
 ]
