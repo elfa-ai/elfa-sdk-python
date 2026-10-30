@@ -8,7 +8,7 @@ Official Python SDK for the Elfa API, v2 and v3 — social intelligence, AI chat
 
 ## Features
 
-- **Social intelligence** — trending tokens, mentions, narratives, smart stats, event summaries
+- **Social intelligence** — trending tokens, mentions, narratives, event summaries
 - **AI chat** — market analysis and conversational chat via `client.chat`, streamed via `client.chat_stream`
 - **Auto condition engine** — build EQL queries that watch markets and notify via `client.auto`
 - **API v3** — events, storylines and arcs; call books, mindshare and trending contracts; calls, call episodes and positioning; ranked accounts, via `client.v3`
@@ -116,7 +116,7 @@ All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 
 Time-ranged endpoints accept either `time_window="24h"` or both `from_time` and `to_time` (unix seconds).
 
-`get_account_smart_stats` is **legacy — it still works, but will be removed on 28 October 2026**. It returns raw metrics, not a reputation score, and is not being extended before then; use `get_keyword_mentions` instead, which returns the posting account alongside each mention's engagement metrics.
+`get_account_smart_stats` is **deprecated and not maintained**. It returns raw metrics, not a reputation score; use `get_keyword_mentions` instead, which returns the posting account alongside each mention's engagement metrics, and `v3.get_top_accounts` to rank accounts.
 
 `get_token_news` returns X posts from accounts tagged as news sources, not articles published by news outlets.
 
@@ -249,7 +249,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every v3 endpoint follows:
 
-- **Access.** Every plan, Free included, can call every v3 endpoint. From 1 November 2026 each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/get-started/pricing#api-v3).
+- **Access.** Every plan, Free included, can call every v3 endpoint. Each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/get-started/pricing#api-v3).
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.

@@ -9,7 +9,7 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
-## Unreleased
+## 6.4.0
 
 ### Added
 
@@ -29,9 +29,11 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   credits, so retrying does not help: `is_retryable_error()` returns `False` and the call
   raises `ElfaRateLimitError` at once. A `429` over the per-minute limit
   (`ERR_RATE_LIMIT_EXCEEDED`) is still retried.
-- README, `AGENT.md` and `CLAUDE.md`: API v3 is open to every plan and, from 1 November
-  2026, costs credits per call on Free, PAYG and Grow; `get_key_status().plan` can be
-  `"free"`. `chat_stream` needs a PAYG, Grow or Enterprise key.
+- README, `AGENT.md` and `CLAUDE.md`: API v3 is open to every plan and costs credits per
+  call on Free, PAYG and Grow; `get_key_status().plan` can be `"free"`. `chat_stream`
+  needs a PAYG, Grow or Enterprise key.
+- `get_account_smart_stats()` is documented as deprecated and not maintained, with
+  `v3.get_top_accounts` as the way to rank accounts.
 - `swagger.json` refreshed to the published API `3.4.2`.
 
 ## 6.3.0

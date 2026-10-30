@@ -87,8 +87,8 @@ positioning = client.v3.get_positioning(bitcoin.id)
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`
   returns the start, and `served_from` says where an earlier `from_time` was cut.
-- Every plan, Free included, can call every v3 endpoint; from 1 November 2026 each call
-  but `get_key_status()` costs credits on Free, PAYG and Grow.
+- Every plan, Free included, can call every v3 endpoint; each call but
+  `get_key_status()` costs credits on Free, PAYG and Grow.
 - Unknown parameters are a `400`, never ignored: send only what the endpoint declares.
   Lists go out comma-separated, at most 30 ids.
 
