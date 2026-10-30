@@ -8,7 +8,7 @@ Official Python SDK for the Elfa API, v2 and v3 — social intelligence, AI chat
 
 ## Features
 
-- **Social intelligence** — trending tokens, mentions, narratives, smart stats, event summaries
+- **Social intelligence** — trending tokens, mentions, narratives, event summaries
 - **AI chat** — market analysis and conversational chat via `client.chat`, streamed via `client.chat_stream`
 - **Auto condition engine** — build EQL queries that watch markets and notify via `client.auto`
 - **API v3** — events, storylines and arcs; call books, mindshare and trending contracts; calls, call episodes and positioning; ranked accounts, via `client.v3`
@@ -53,8 +53,8 @@ from elfa import AsyncElfaClient
 
 async def main():
     async with AsyncElfaClient(api_key="your-api-key") as client:
-        stats = await client.get_account_smart_stats("elonmusk")
-        print(stats.data.smart_following_count)
+        trending = await client.get_trending_tokens(time_window="24h")
+        print(trending.data.data[0].token)
 
 asyncio.run(main())
 ```
@@ -103,7 +103,7 @@ All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 | `ping()` | `/v2/ping` |
 | `get_api_key_status()` | `/v2/key-status` |
 | `get_trending_tokens(...)` | `/v2/aggregations/trending-tokens` |
-| `get_account_smart_stats(username)` | `/v2/account/smart-stats` |
+| `get_account_smart_stats(username)` | `/v2/account/smart-stats` (deprecated) |
 | `get_keyword_mentions(...)` | `/v2/data/keyword-mentions` |
 | `get_token_news(...)` | `/v2/data/token-news` |
 | `get_trending_cas_twitter(...)` | `/v2/aggregations/trending-cas/twitter` |
@@ -116,13 +116,13 @@ All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 
 Time-ranged endpoints accept either `time_window="24h"` or both `from_time` and `to_time` (unix seconds).
 
-`get_account_smart_stats` is **legacy — it still works, but will be removed on 28 October 2026**. It returns raw metrics, not a reputation score, and is not being extended before then; use `get_keyword_mentions` instead, which returns the posting account alongside each mention's engagement metrics.
+`get_account_smart_stats` is **deprecated and not maintained**. It returns raw metrics, not a reputation score; use `get_keyword_mentions` instead, which returns the posting account alongside each mention's engagement metrics, and `v3.get_top_accounts` to rank accounts.
 
 `get_token_news` returns X posts from accounts tagged as news sources, not articles published by news outlets.
 
 ### Streaming chat (SSE)
 
-`chat_stream` takes the same arguments as `chat` and yields one event per `data:` frame, ending on the terminating `[DONE]` frame. Requires a PAYG or Enterprise API key.
+`chat_stream` takes the same arguments as `chat` and yields one event per `data:` frame, ending on the terminating `[DONE]` frame. Requires a PAYG, Grow or Enterprise API key.
 
 ```python
 for event in client.chat_stream("What is the sentiment on SOL?"):
@@ -147,6 +147,8 @@ answer = client.chat("What moved SOL today?", include_sources=True)
 for source in answer.data.sources or []:
     print(source.kind, source.url, source.title)
 ```
+
+Pass `use_memory=True` to let the request use the saved memory of the Elfa account that owns the API key: the answer can draw on notes from that account's earlier chats, and the chat can add to them. Without it the request neither reads nor writes memory. Leave it off when one key serves many end users, so one user's notes never shape another's answer; pass `session_id` to carry context within a conversation instead.
 
 Each source has a `url`, a `kind` and an optional `title` naming the research step, such as "Searched X". These are links only: the content of a page or post is not returned. A source was read, not necessarily cited in `message`, and the list is empty when the answer used no linkable source. `kind` is a string (`x_post`, `x_account`, `telegram`, `dex`, `explorer`, `prediction_market`, `web`): treat a value you do not recognise as `web`.
 
@@ -180,6 +182,8 @@ client.auto.delete_query(query_id)
 ```
 
 A `tweet` condition can watch any public X account; one outside Elfa's real-time set needs a paid API key, and Builder Chat drafts only real-time accounts. `validate_query` and `create_query` return `tweet_accounts`, saying how each is billed: `included` costs nothing extra, `per_post` costs `credits_per_post` for each post (not replies or reposts) while the query runs. Those charges are not in `estimated_credits` or `x-elfa-credits`; `get_api_key_status()` shows them. An account that can't be watched comes back as a validation error with `details.reason`. When a query fails with a recorded reason, `get_query` carries it in `failure`. See [X Accounts and Per-Post Billing](https://docs.elfa.ai/auto/signal#x-accounts-and-per-post-billing).
+
+`x_follow_made` and `x_follow_overlap` conditions return `follow_accounts` the same way: `included` costs nothing extra, `per_day` costs `credits_per_day` for each UTC day its follows are read, on top of `estimated_credits`. See [Follow Graph](https://docs.elfa.ai/auto/account-follows).
 
 Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, and `validate_symbol`.
 
@@ -247,7 +251,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every v3 endpoint follows:
 
-- **Access.** PAYG, Grow and Enterprise keys can call every v3 endpoint, free on Pay-as-you-go and Grow until 31 October 2026. A Free key can call only `get_key_status()`; the rest raise `ElfaAPIError` with status `403`: `The v3 API is free on the Pay-as-you-go and Grow plans. Upgrade at …`.
+- **Access.** Every plan, Free included, can call every v3 endpoint, and `get_key_status().plan` can be `"free"`. Each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/get-started/pricing#api-v3).
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
@@ -285,7 +289,7 @@ except ElfaAPIError as e:
     print("api error", e.status_code, e)
 ```
 
-Idempotent (GET) requests are retried with exponential backoff on network errors, rate limits, and 5xx responses. Mutations are not retried automatically.
+Idempotent (GET) requests are retried with exponential backoff on network errors, rate limits, and 5xx responses. Mutations are not retried automatically. A `429` whose code is `ERR_RATE_LIMITED` means the key is out of credits, not over the per-minute limit, so it is never retried: upgrade, turn on overage, or raise the spend cap.
 
 ## Development
 
@@ -298,7 +302,7 @@ make check   # flake8 + mypy + pytest
 make format  # black + isort
 ```
 
-Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip. Set `ELFA_V3=1` as well to run the remaining v3 tests on a PAYG, Grow or Enterprise key.
+Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip. Set `ELFA_V3=1` as well to run the remaining v3 tests.
 
 ## Support
 

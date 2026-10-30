@@ -73,6 +73,9 @@ def test_is_retryable_error():
     assert is_retryable_error(ElfaAPIError("x", status_code=502))
     assert not is_retryable_error(ElfaAPIError("x", status_code=400))
     assert not is_retryable_error(ElfaAuthenticationError())
+    assert not is_retryable_error(
+        ElfaRateLimitError(response_data={"code": "ERR_RATE_LIMITED"})
+    )
 
 
 def test_rate_limit_reset_from_epoch():

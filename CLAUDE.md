@@ -93,12 +93,11 @@ Rules to respect in code and tests:
   entities, arcs, positioning and top accounts take no range.
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan: `get_key_status().history_from`.
-- PAYG, Grow and Enterprise keys can call every v3 endpoint; a Free key only
-  `get_key_status()`, the rest answer `403` ("The v3 API is free on the Pay-as-you-go and
-  Grow plans. Upgrade at …").
+- Every plan, Free included, can call every v3 endpoint; each call but
+  `get_key_status()` costs credits on Free, PAYG and Grow.
 - Unknown parameters are a `400`: never send one the endpoint does not declare. Lists go
   out comma-separated.
-- Chat takes `include_sources`; sources come back on `data.sources` or the stream's
+- Chat takes `include_sources` and `use_memory`; sources come back on `data.sources` or the stream's
   `complete` event.
 
 ### Code Generation Guidelines

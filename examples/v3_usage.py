@@ -1,4 +1,4 @@
-"""API v3. Run with ELFA_API_KEY set to a PAYG, Grow or Enterprise key."""
+"""API v3. Run with ELFA_API_KEY set."""
 
 import os
 import time

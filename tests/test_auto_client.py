@@ -142,6 +142,35 @@ def test_validate_query_parses_tweet_accounts():
 
 
 @respx.mock
+def test_validate_query_parses_follow_accounts():
+    respx.post(f"{BASE_URL}/v2/auto/queries/validate").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "errors": [],
+                "warnings": [],
+                "estimatedCredits": 0,
+                "followAccounts": [
+                    {
+                        "path": "conditions[0]",
+                        "username": "nasa",
+                        "accountSourceRefId": "11348282",
+                        "billing": "per_day",
+                        "creditsPerDay": 1,
+                    },
+                ],
+            },
+        )
+    )
+    result = AutoClient(transport=_transport()).validate_query({"query": {}})
+    assert result.follow_accounts is not None
+    (per_day,) = result.follow_accounts
+    assert per_day.billing == "per_day"
+    assert per_day.credits_per_day == 1
+
+
+@respx.mock
 def test_list_queries_sends_params():
     route = respx.get(f"{BASE_URL}/v2/auto/queries").mock(
         return_value=httpx.Response(200, json={"queries": []})

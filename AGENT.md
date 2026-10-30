@@ -59,7 +59,7 @@ The SDK returns processed metadata and tweet links only — never raw tweet text
 For raw content, call the X (Twitter) API directly with those links/ids.
 
 ### Client Structure
-- **Sync Client**: `ElfaClient` - data + AI chat (`chat`, `chat_stream`, both take `include_sources`), with `.auto` and `.v3`
+- **Sync Client**: `ElfaClient` - data + AI chat (`chat`, `chat_stream`, both take `include_sources` and `use_memory`), with `.auto` and `.v3`
 - **Async Client**: `AsyncElfaClient` - async mirror of `ElfaClient`
 - **Auto engine**: `AutoClient` / `AsyncAutoClient` (`/v2/auto/*`) - EQL queries, drafts, sessions, executions, SSE streams
 - **API v3**: `V3Client` / `AsyncV3Client` (`/v3/*`) - one `GET` method per endpoint, sharing the parent transport
@@ -87,9 +87,8 @@ positioning = client.v3.get_positioning(bitcoin.id)
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`
   returns the start, and `served_from` says where an earlier `from_time` was cut.
-- PAYG, Grow and Enterprise keys can call every v3 endpoint. A Free key can call only
-  `get_key_status()`; the rest answer `403` ("The v3 API is free on the Pay-as-you-go
-  and Grow plans. Upgrade at …").
+- Every plan, Free included, can call every v3 endpoint; each call but
+  `get_key_status()` costs credits on Free, PAYG and Grow.
 - Unknown parameters are a `400`, never ignored: send only what the endpoint declares.
   Lists go out comma-separated, at most 30 ids.
 

@@ -39,8 +39,8 @@ class AsyncElfaClient:
         >>> from elfa import AsyncElfaClient
         >>> async def main():
         ...     async with AsyncElfaClient(api_key="your-api-key") as client:
-        ...         stats = await client.get_account_smart_stats("elonmusk")
-        ...         print(stats.data.smart_following_count)
+        ...         trending = await client.get_trending_tokens(time_window="24h")
+        ...         print(trending.data.data[0].token)
         >>> asyncio.run(main())
     """
 
@@ -108,11 +108,11 @@ class AsyncElfaClient:
     async def get_account_smart_stats(self, username: str) -> AccountSmartStatsResponse:
         """Smart follower and engagement metrics for an X account.
 
-        Deprecated: ``GET /v2/account/smart-stats`` is legacy. It still works,
-        but will be removed on 28 October 2026, and is not being extended before
-        then. It returns raw account metrics, not a reputation score. Use
+        Deprecated: ``GET /v2/account/smart-stats`` is deprecated and not
+        maintained. It returns raw account metrics, not a reputation score. Use
         :meth:`get_keyword_mentions` instead, which returns the posting account
-        alongside each mention's engagement metrics.
+        alongside each mention's engagement metrics, and ``v3.get_top_accounts``
+        to rank accounts.
         """
         path, params = build.account_smart_stats(username)
         return parse_model(AccountSmartStatsResponse, await self._get(path, params))
@@ -240,9 +240,16 @@ class AsyncElfaClient:
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
         include_sources: Optional[bool] = None,
+        use_memory: Optional[bool] = None,
     ) -> ChatResponse:
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata, include_sources
+            message,
+            session_id,
+            analysis_type,
+            speed,
+            asset_metadata,
+            include_sources,
+            use_memory,
         )
         data = await self._transport.request_json(
             "POST", "/v2/chat", content=to_compact_json(body)
@@ -258,10 +265,17 @@ class AsyncElfaClient:
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
         include_sources: Optional[bool] = None,
+        use_memory: Optional[bool] = None,
     ) -> AsyncIterator[ChatStreamEvent]:
-        """Stream a chat answer as SSE. Requires a PAYG or Enterprise API key."""
+        """Stream a chat answer as SSE. Requires a PAYG, Grow or Enterprise API key."""
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata, include_sources
+            message,
+            session_id,
+            analysis_type,
+            speed,
+            asset_metadata,
+            include_sources,
+            use_memory,
         )
         async with self._transport.stream_lines(
             "POST",

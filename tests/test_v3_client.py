@@ -625,8 +625,8 @@ def test_v3_400_raises_validation_error_with_request_id():
 
 
 @respx.mock
-def test_v3_403_on_free_key_raises_api_error():
-    message = "The v3 API is free on the Pay-as-you-go and Grow plans. Upgrade at x"
+def test_v3_403_raises_api_error():
+    message = "Forbidden"
     respx.get(f"{BASE_URL}/v3/calls/positioning").mock(
         return_value=httpx.Response(
             403,

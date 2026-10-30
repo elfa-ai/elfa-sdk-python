@@ -161,6 +161,24 @@ def test_chat_include_sources_sends_flag_and_parses_sources():
 
 
 @respx.mock
+def test_chat_use_memory_sends_flag():
+    route = respx.post(f"{BASE_URL}/v2/chat").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "success": True,
+                "data": {"message": "hi", "sessionId": "s", "creditsConsumed": 1},
+            },
+        )
+    )
+    client = _client()
+    client.chat("hello", use_memory=True)
+    body = route.calls[-1].request.content.decode()
+    assert body == '{"message":"hello","useMemory":true}'
+    client.close()
+
+
+@respx.mock
 def test_chat_without_include_sources_has_no_sources():
     respx.post(f"{BASE_URL}/v2/chat").mock(
         return_value=httpx.Response(

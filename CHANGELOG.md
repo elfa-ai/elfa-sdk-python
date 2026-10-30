@@ -9,6 +9,36 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## 6.4.0
+
+### Added
+
+- **`use_memory` on chat** (API 3.3.0). `chat` and `chat_stream`, sync and async, take
+  `use_memory: Optional[bool]`. `True` lets the request read and add to the saved memory
+  of the Elfa account that owns the API key. Without it the request neither reads nor
+  writes memory, which is now the API's default.
+- **Follow accounts on Auto validate and create** (API 3.1.0). `AutoValidateResponse`
+  and `AutoQuery` carry `follow_accounts: Optional[List[AutoFollowAccount]]`, one per
+  account an `x_follow_made` or `x_follow_overlap` condition watches, with `billing`
+  (`included` or `per_day`) and `credits_per_day`. A `per_day` account costs that much
+  for each UTC day its follows are read, on top of `estimated_credits`.
+
+### Changed
+
+- **`ERR_RATE_LIMITED` is not retried.** A `429` with that code means the key is out of
+  credits, so retrying does not help: `is_retryable_error()` returns `False` and the call
+  raises `ElfaRateLimitError` at once. A `429` over the per-minute limit
+  (`ERR_RATE_LIMIT_EXCEEDED`) is still retried.
+- README, `AGENT.md` and `CLAUDE.md`: API v3 is open to every plan and costs credits per
+  call on Free, PAYG and Grow; `get_key_status().plan` can be `"free"`. `chat_stream`
+  needs a PAYG, Grow or Enterprise key.
+- `get_account_smart_stats()` is documented as deprecated and not maintained, with
+  `v3.get_top_accounts` as the way to rank accounts. The quickstart and the basic
+  example no longer call it.
+- Requires `certifi>=2026.10.19` (#21). In an existing environment, run
+  `pip install -U certifi`.
+- `swagger.json` refreshed to the published API `3.4.2`.
+
 ## 6.3.0
 
 ### Added
