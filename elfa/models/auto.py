@@ -34,6 +34,14 @@ class AutoTweetAccount(ElfaModel):
     credits_per_post: Optional[float] = Field(None, alias="creditsPerPost")
 
 
+class AutoFollowAccount(ElfaModel):
+    path: str
+    username: str
+    account_source_ref_id: str = Field(alias="accountSourceRefId")
+    billing: str
+    credits_per_day: Optional[float] = Field(None, alias="creditsPerDay")
+
+
 class AutoQueryFailure(ElfaModel):
     code: str
     message: Optional[str] = None
@@ -48,6 +56,9 @@ class AutoValidateResponse(ElfaModel):
     tweet_accounts: Optional[List[AutoTweetAccount]] = Field(
         None, alias="tweetAccounts"
     )
+    follow_accounts: Optional[List[AutoFollowAccount]] = Field(
+        None, alias="followAccounts"
+    )
 
 
 class AutoQuery(ElfaModel):
@@ -59,6 +70,9 @@ class AutoQuery(ElfaModel):
     estimated_credits: Optional[float] = Field(None, alias="estimatedCredits")
     tweet_accounts: Optional[List[AutoTweetAccount]] = Field(
         None, alias="tweetAccounts"
+    )
+    follow_accounts: Optional[List[AutoFollowAccount]] = Field(
+        None, alias="followAccounts"
     )
 
 

@@ -189,6 +189,7 @@ def chat_body(
     speed: Optional[str],
     asset_metadata: Optional[Mapping[str, Any]],
     include_sources: Optional[bool],
+    use_memory: Optional[bool] = None,
 ) -> Dict[str, Any]:
     if (analysis_type or "chat") == "chat" and not (message and message.strip()):
         raise ElfaValidationError("message is required for chat analysis")
@@ -200,6 +201,7 @@ def chat_body(
             "speed": speed,
             "assetMetadata": asset_metadata,
             "includeSources": include_sources,
+            "useMemory": use_memory,
         }
     )
 

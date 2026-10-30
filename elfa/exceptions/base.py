@@ -101,8 +101,15 @@ class ElfaTimeoutError(ElfaAPIError):
 
 
 def is_retryable_error(error: Exception) -> bool:
-    """Retry rate limits, network/timeout errors, and 5xx server responses."""
-    if isinstance(error, (ElfaRateLimitError, ElfaNetworkError, ElfaTimeoutError)):
+    """Retry rate limits, network/timeout errors, and 5xx server responses.
+
+    A ``429`` whose code is ``ERR_RATE_LIMITED`` means the key is out of credits,
+    so it is not retried.
+    """
+    if isinstance(error, ElfaRateLimitError):
+        data = error.response_data
+        return not (isinstance(data, dict) and data.get("code") == "ERR_RATE_LIMITED")
+    if isinstance(error, (ElfaNetworkError, ElfaTimeoutError)):
         return True
     if isinstance(error, ElfaAPIError) and error.status_code is not None:
         return 500 <= error.status_code < 600

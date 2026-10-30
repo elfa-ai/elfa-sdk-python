@@ -122,7 +122,7 @@ Time-ranged endpoints accept either `time_window="24h"` or both `from_time` and 
 
 ### Streaming chat (SSE)
 
-`chat_stream` takes the same arguments as `chat` and yields one event per `data:` frame, ending on the terminating `[DONE]` frame. Requires a PAYG or Enterprise API key.
+`chat_stream` takes the same arguments as `chat` and yields one event per `data:` frame, ending on the terminating `[DONE]` frame. Requires a PAYG, Grow or Enterprise API key.
 
 ```python
 for event in client.chat_stream("What is the sentiment on SOL?"):
@@ -147,6 +147,8 @@ answer = client.chat("What moved SOL today?", include_sources=True)
 for source in answer.data.sources or []:
     print(source.kind, source.url, source.title)
 ```
+
+Pass `use_memory=True` to let the request use the saved memory of the Elfa account that owns the API key: the answer can draw on notes from that account's earlier chats, and the chat can add to them. Without it the request neither reads nor writes memory. Leave it off when one key serves many end users, so one user's notes never shape another's answer; pass `session_id` to carry context within a conversation instead.
 
 Each source has a `url`, a `kind` and an optional `title` naming the research step, such as "Searched X". These are links only: the content of a page or post is not returned. A source was read, not necessarily cited in `message`, and the list is empty when the answer used no linkable source. `kind` is a string (`x_post`, `x_account`, `telegram`, `dex`, `explorer`, `prediction_market`, `web`): treat a value you do not recognise as `web`.
 
@@ -247,7 +249,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every v3 endpoint follows:
 
-- **Access.** PAYG, Grow and Enterprise keys can call every v3 endpoint, free on Pay-as-you-go and Grow until 31 October 2026. A Free key can call only `get_key_status()`; the rest raise `ElfaAPIError` with status `403`: `The v3 API is free on the Pay-as-you-go and Grow plans. Upgrade at …`.
+- **Access.** Every plan, Free included, can call every v3 endpoint. From 1 November 2026 each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/get-started/pricing#api-v3).
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
@@ -285,7 +287,7 @@ except ElfaAPIError as e:
     print("api error", e.status_code, e)
 ```
 
-Idempotent (GET) requests are retried with exponential backoff on network errors, rate limits, and 5xx responses. Mutations are not retried automatically.
+Idempotent (GET) requests are retried with exponential backoff on network errors, rate limits, and 5xx responses. Mutations are not retried automatically. A `429` whose code is `ERR_RATE_LIMITED` means the key is out of credits, not over the per-minute limit, so it is never retried: upgrade, turn on overage, or raise the spend cap.
 
 ## Development
 
@@ -298,7 +300,7 @@ make check   # flake8 + mypy + pytest
 make format  # black + isort
 ```
 
-Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip. Set `ELFA_V3=1` as well to run the remaining v3 tests on a PAYG, Grow or Enterprise key.
+Live integration tests run only when `ELFA_API_KEY` is set (optionally `ELFA_BASE_URL`); otherwise they skip. Set `ELFA_V3=1` as well to run the remaining v3 tests.
 
 ## Support
 

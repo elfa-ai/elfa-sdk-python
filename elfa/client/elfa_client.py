@@ -250,9 +250,16 @@ class ElfaClient:
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
         include_sources: Optional[bool] = None,
+        use_memory: Optional[bool] = None,
     ) -> ChatResponse:
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata, include_sources
+            message,
+            session_id,
+            analysis_type,
+            speed,
+            asset_metadata,
+            include_sources,
+            use_memory,
         )
         data = self._transport.request_json(
             "POST", "/v2/chat", content=to_compact_json(body)
@@ -268,10 +275,17 @@ class ElfaClient:
         speed: Optional[ChatSpeed] = None,
         asset_metadata: Optional[ChatAssetMetadata] = None,
         include_sources: Optional[bool] = None,
+        use_memory: Optional[bool] = None,
     ) -> Iterator[ChatStreamEvent]:
-        """Stream a chat answer as SSE. Requires a PAYG or Enterprise API key."""
+        """Stream a chat answer as SSE. Requires a PAYG, Grow or Enterprise API key."""
         body = build.chat_body(
-            message, session_id, analysis_type, speed, asset_metadata, include_sources
+            message,
+            session_id,
+            analysis_type,
+            speed,
+            asset_metadata,
+            include_sources,
+            use_memory,
         )
         with self._transport.stream_lines(
             "POST",

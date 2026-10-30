@@ -2,8 +2,8 @@
 
 Skipped unless ``ELFA_API_KEY`` is set. Optional env:
 ``ELFA_BASE_URL``, ``ELFA_STAGING_SECRET``,
-``ELFA_CHAT_STREAM=1`` to exercise chat streaming on a PAYG or Enterprise key, and
-``ELFA_V3=1`` to exercise API v3 on a PAYG, Grow or Enterprise key.
+``ELFA_CHAT_STREAM=1`` to exercise chat streaming on a PAYG, Grow or Enterprise key, and
+``ELFA_V3=1`` to exercise API v3.
 """
 
 import os
@@ -110,7 +110,7 @@ def test_auto_notification_lifecycle(client):
 
 @pytest.mark.skipif(
     not os.environ.get("ELFA_CHAT_STREAM"),
-    reason="requires a PAYG or Enterprise key (set ELFA_CHAT_STREAM=1)",
+    reason="requires a PAYG, Grow or Enterprise key (set ELFA_CHAT_STREAM=1)",
 )
 def test_chat_stream_yields_events(client):
     events = [event.type for event in client.chat_stream("what is bitcoin")]
@@ -124,7 +124,7 @@ def test_v3_key_status(client):
 
 @pytest.mark.skipif(
     not os.environ.get("ELFA_V3"),
-    reason="requires a PAYG, Grow or Enterprise key (set ELFA_V3=1)",
+    reason="set ELFA_V3=1 to run the v3 tests",
 )
 def test_v3_entities_events_positioning(client):
     entities = client.v3.get_entities("btc", entity_type=["token"], limit=1)
