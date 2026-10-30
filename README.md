@@ -53,8 +53,8 @@ from elfa import AsyncElfaClient
 
 async def main():
     async with AsyncElfaClient(api_key="your-api-key") as client:
-        stats = await client.get_account_smart_stats("elonmusk")
-        print(stats.data.smart_following_count)
+        trending = await client.get_trending_tokens(time_window="24h")
+        print(trending.data.data[0].token)
 
 asyncio.run(main())
 ```
@@ -103,7 +103,7 @@ All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 | `ping()` | `/v2/ping` |
 | `get_api_key_status()` | `/v2/key-status` |
 | `get_trending_tokens(...)` | `/v2/aggregations/trending-tokens` |
-| `get_account_smart_stats(username)` | `/v2/account/smart-stats` |
+| `get_account_smart_stats(username)` | `/v2/account/smart-stats` (deprecated) |
 | `get_keyword_mentions(...)` | `/v2/data/keyword-mentions` |
 | `get_token_news(...)` | `/v2/data/token-news` |
 | `get_trending_cas_twitter(...)` | `/v2/aggregations/trending-cas/twitter` |
@@ -183,6 +183,8 @@ client.auto.delete_query(query_id)
 
 A `tweet` condition can watch any public X account; one outside Elfa's real-time set needs a paid API key, and Builder Chat drafts only real-time accounts. `validate_query` and `create_query` return `tweet_accounts`, saying how each is billed: `included` costs nothing extra, `per_post` costs `credits_per_post` for each post (not replies or reposts) while the query runs. Those charges are not in `estimated_credits` or `x-elfa-credits`; `get_api_key_status()` shows them. An account that can't be watched comes back as a validation error with `details.reason`. When a query fails with a recorded reason, `get_query` carries it in `failure`. See [X Accounts and Per-Post Billing](https://docs.elfa.ai/auto/signal#x-accounts-and-per-post-billing).
 
+`x_follow_made` and `x_follow_overlap` conditions return `follow_accounts` the same way: `included` costs nothing extra, `per_day` costs `credits_per_day` for each UTC day its follows are read, on top of `estimated_credits`. See [Follow Graph](https://docs.elfa.ai/auto/account-follows).
+
 Also available: `chat`, `list_queries`, drafts (`list_drafts`/`get_draft`/`upsert_draft`/`delete_draft`/`validate_draft`/`convert_draft`), `list_sessions`/`get_session`, `list_executions`/`get_execution`, and `validate_symbol`.
 
 Builder Chat is dynamically priced, so it reports what the turn cost:
@@ -249,7 +251,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every v3 endpoint follows:
 
-- **Access.** Every plan, Free included, can call every v3 endpoint. Each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/get-started/pricing#api-v3).
+- **Access.** Every plan, Free included, can call every v3 endpoint, and `get_key_status().plan` can be `"free"`. Each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/get-started/pricing#api-v3).
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. Entities, arcs, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.

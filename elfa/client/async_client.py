@@ -39,8 +39,8 @@ class AsyncElfaClient:
         >>> from elfa import AsyncElfaClient
         >>> async def main():
         ...     async with AsyncElfaClient(api_key="your-api-key") as client:
-        ...         stats = await client.get_account_smart_stats("elonmusk")
-        ...         print(stats.data.smart_following_count)
+        ...         trending = await client.get_trending_tokens(time_window="24h")
+        ...         print(trending.data.data[0].token)
         >>> asyncio.run(main())
     """
 

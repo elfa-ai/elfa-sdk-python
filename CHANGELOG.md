@@ -33,7 +33,10 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   call on Free, PAYG and Grow; `get_key_status().plan` can be `"free"`. `chat_stream`
   needs a PAYG, Grow or Enterprise key.
 - `get_account_smart_stats()` is documented as deprecated and not maintained, with
-  `v3.get_top_accounts` as the way to rank accounts.
+  `v3.get_top_accounts` as the way to rank accounts. The quickstart and the basic
+  example no longer call it.
+- Requires `certifi>=2026.10.19` (#21). In an existing environment, run
+  `pip install -U certifi`.
 - `swagger.json` refreshed to the published API `3.4.2`.
 
 ## 6.3.0

@@ -22,9 +22,6 @@ def main() -> None:
         for mention in mentions.data:
             print(mention.link, mention.like_count)
 
-        stats = client.get_account_smart_stats("elonmusk")
-        print("smart following:", stats.data.smart_following_count)
-
         answer = client.chat("What's the market sentiment on Bitcoin today?")
         print("chat:", answer.data.message)
 
