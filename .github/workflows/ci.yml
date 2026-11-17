@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Test Suite
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     
     strategy:
       matrix:
