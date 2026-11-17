@@ -49,6 +49,29 @@ MindsharePeriodV3 = Literal["1h", "4h", "24h", "7d"]
 CallStatusV3 = Literal["open", "closed"]
 CallDirectionV3 = Literal["long", "short"]
 AccountMetricV3 = Literal["standing", "alphaScore", "hitRate", "avgReturn"]
+CalendarCategoryV3 = Literal[
+    "macro",
+    "earnings",
+    "unlock",
+    "governance",
+    "listing",
+    "launch",
+    "airdrop",
+    "conference",
+    "regulatory",
+    "protocolUpgrade",
+    "corporateAction",
+    "marketResolution",
+    "campaign",
+    "expiry",
+    "deadline",
+    "geopolitics",
+    "other",
+]
+CalendarStatusV3 = Literal[
+    "scheduled", "rescheduled", "postponed", "cancelled", "past", "occurred"
+]
+CalendarConfidenceV3 = Literal["official", "reported", "rumored"]
 
 
 class ExternalIdsV3(ElfaModel):
@@ -170,6 +193,67 @@ class ArcsResponseV3(ElfaModel):
     arcs: List[ArcV3]
     next_cursor: Optional[str] = Field(None, alias="nextCursor")
     has_more: bool = Field(alias="hasMore")
+
+
+class PredictionMarketMoveV3(ElfaModel):
+    event_id: str = Field(alias="eventId")
+    outcome_id: str = Field(alias="outcomeId")
+    outcome: Optional[str] = None
+    before: float
+    after: float
+    unusual: bool
+
+
+class PredictionMarketV3(ElfaModel):
+    provider: str
+    market_id: str = Field(alias="marketId")
+    title: str
+    url: str
+    closes_at: Optional[int] = Field(None, alias="closesAt")
+    event_ids: List[str] = Field(alias="eventIds")
+    move: Optional[PredictionMarketMoveV3] = None
+
+
+class RelatedPredictionMarketsV3(ElfaModel):
+    id: str
+    kind: str
+    markets: List[PredictionMarketV3]
+
+
+class PredictionMarketsResponseV3(ElfaModel):
+    related: List[RelatedPredictionMarketsV3]
+
+
+class CalendarOutcomeV3(ElfaModel):
+    event_id: str = Field(alias="eventId")
+    implication: Optional[str] = None
+
+
+class CalendarEntryV3(ElfaModel):
+    id: str
+    title: str
+    summary: Optional[str] = None
+    category: str
+    starts_at: int = Field(alias="startsAt")
+    ends_at: Optional[int] = Field(None, alias="endsAt")
+    precision: str
+    date: Optional[str] = None
+    end_date: Optional[str] = Field(None, alias="endDate")
+    timezone: Optional[str] = None
+    status: str
+    importance: float
+    confidence: str
+    entities: List[EventEntityV3]
+    event_ids: List[str] = Field(alias="eventIds")
+    storyline_ids: List[str] = Field(alias="storylineIds")
+    outcome: Optional[CalendarOutcomeV3] = None
+
+
+class CalendarResponseV3(ElfaModel):
+    entries: List[CalendarEntryV3]
+    next_cursor: Optional[str] = Field(None, alias="nextCursor")
+    has_more: bool = Field(alias="hasMore")
+    served_from: Optional[int] = Field(None, alias="servedFrom")
 
 
 class CallBookBarV3(ElfaModel):

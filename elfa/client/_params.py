@@ -341,6 +341,44 @@ def v3_arcs(
     )
 
 
+def v3_prediction_markets(ids: Sequence[str], limit: Optional[int]) -> Query:
+    if not ids:
+        raise ElfaValidationError("ids is required")
+    return "/v3/events/prediction-markets", drop_none(
+        {"ids": _csv("ids", ids), "limit": limit}
+    )
+
+
+def v3_calendar(
+    from_time: Optional[int],
+    to_time: Optional[int],
+    entity_ids: Optional[Sequence[str]],
+    asset_class: Optional[str],
+    category: Optional[Sequence[str]],
+    status: Optional[Sequence[str]],
+    confidence: Optional[Sequence[str]],
+    min_importance: Optional[float],
+    order: Optional[str],
+    limit: Optional[int],
+    cursor: Optional[str],
+) -> Query:
+    return "/v3/events/calendar", drop_none(
+        {
+            "from": from_time,
+            "to": to_time,
+            "entityIds": _csv("entity_ids", entity_ids),
+            "assetClass": asset_class,
+            "category": _csv("category", category),
+            "status": _csv("status", status),
+            "confidence": _csv("confidence", confidence),
+            "minImportance": min_importance,
+            "order": order,
+            "limit": limit,
+            "cursor": cursor,
+        }
+    )
+
+
 def v3_call_book(
     market: str,
     from_time: int,

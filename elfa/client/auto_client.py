@@ -175,6 +175,7 @@ class AutoClient(MountedClient):
         execution_type: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        after: Optional[str] = None,
     ) -> AutoListExecutionsResponse:
         params = drop_none(
             {
@@ -183,6 +184,7 @@ class AutoClient(MountedClient):
                 "type": execution_type,
                 "limit": limit,
                 "offset": offset,
+                "after": after,
             }
         )
         return parse_model(AutoListExecutionsResponse, self._get("/executions", params))
@@ -361,6 +363,7 @@ class AsyncAutoClient(MountedClient):
         execution_type: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        after: Optional[str] = None,
     ) -> AutoListExecutionsResponse:
         params = drop_none(
             {
@@ -369,6 +372,7 @@ class AsyncAutoClient(MountedClient):
                 "type": execution_type,
                 "limit": limit,
                 "offset": offset,
+                "after": after,
             }
         )
         return parse_model(
