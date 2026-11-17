@@ -68,7 +68,8 @@ For raw content, call the X (Twitter) API directly with those links/ids.
 
 ### API v3
 `client.v3` (`V3Client` / `AsyncV3Client`, `/v3/*`) is the data stack that powers agent
-awareness: events, storylines and arcs; call books, mindshare and trending contracts;
+awareness: events, storylines and arcs, the prediction markets they bear on, and a calendar
+of what is scheduled; call books, mindshare and trending contracts;
 calls, call episodes and positioning; ranked accounts. One `GET` method per endpoint,
 param mapping in `_params.py` (`v3_*` builders), models in `elfa/models/v3.py`.
 ```python
@@ -82,13 +83,15 @@ positioning = client.v3.get_positioning(bitcoin.id)
 ```
 - Times are unix seconds, UTC. Milliseconds are a `400`.
 - `from_time` is required except when fetching by id or searching with `q`;
-  `get_events(sort="relevant")` refuses it. Entities,
-  arcs, positioning and top accounts take no range; mindshare takes `period` + `to_time`.
+  `get_events(sort="relevant")` refuses it. `get_calendar()` reads ahead: `from_time`
+  defaults to 00:00 UTC today, `to_time` to 30 days later. Entities, arcs, prediction
+  markets, positioning and top accounts take no range; mindshare takes `period` + `to_time`.
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`
   returns the start, and `served_from` says where an earlier `from_time` was cut.
 - Every plan, Free included, can call every v3 endpoint; each call but
-  `get_key_status()` costs credits on Free, PAYG and Grow.
+  `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free,
+  PAYG and Grow.
 - Unknown parameters are a `400`, never ignored: send only what the endpoint declares.
   Lists go out comma-separated, at most 30 ids.
 

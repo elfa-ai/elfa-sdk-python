@@ -22,6 +22,27 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   account an `x_follow_made` or `x_follow_overlap` condition watches, with `billing`
   (`included` or `per_day`) and `credits_per_day`. A `per_day` account costs that much
   for each UTC day its follows are read, on top of `estimated_credits`.
+- **Prediction markets** (API 3.6.0). `v3.get_prediction_markets(ids, limit=...)`,
+  sync and async, calls `/v3/events/prediction-markets` with up to 30 event,
+  storyline or arc ids and returns `PredictionMarketsResponseV3`: per id, its `kind`
+  and the open Polymarket and Kalshi `markets` it bears on, each with `provider`,
+  `market_id`, `closes_at`, `event_ids` and `move` (an outcome's odds an hour before
+  and after a story's first post, and whether that was `unusual`). No range and no
+  cursor; free for now.
+- **Events calendar** (API 3.9.0). `v3.get_calendar(...)`, sync and async, calls
+  `/v3/events/calendar` and returns `CalendarResponseV3`: `entries`, soonest first,
+  with a cursor. `from_time` defaults to 00:00 UTC today and `to_time` to 30 days
+  after it. Filters: `entity_ids`, `asset_class`, `category`, `status`, `confidence`
+  and `min_importance`, plus `order`, `limit` and `cursor`. Each `CalendarEntryV3`
+  has `starts_at`, `precision` (`exact`, or `day` with a `date`), `status`,
+  `importance`, `confidence`, `entities`, `event_ids`, `storyline_ids` and, once
+  linked, `outcome`. `CalendarCategoryV3`, `CalendarStatusV3` and
+  `CalendarConfidenceV3` type the filters.
+- **Read every execution once** (API 3.8.0). `list_executions`, sync and async, takes
+  `after`: pass `"start"`, then `pagination.next_cursor`, to read executions oldest
+  first, each exactly once. `AutoListExecutionsResponse` carries
+  `pagination: Optional[AutoPagination]` (`limit`, `has_more`, `next_cursor`, and
+  `total` and `offset` on offset pages).
 
 ### Changed
 
@@ -37,7 +58,11 @@ They are not lockstep: an SDK-only fix ships in one without the other.
   example no longer call it.
 - Requires `certifi>=2026.10.19` (#21). In an existing environment, run
   `pip install -U certifi`.
-- `swagger.json` refreshed to the published API `3.4.2`.
+- README: Builder Chat (`auto.chat`) raises on a failed turn (API 3.10.0): a message
+  the safety checks reject is `ElfaValidationError` with `status_code` `400`, and a
+  turn with no answer is `ElfaAPIError` with `status_code` `502` and the `sessionId`
+  in `response_data`, where the API used to return `200` with an empty `response`.
+- `swagger.json` refreshed to the published API `3.10.1`.
 
 ## 6.3.0
 

@@ -8,7 +8,12 @@ import respx
 
 from elfa import AsyncElfaClient, AsyncV3Client, ElfaClient, V3Client
 from elfa.exceptions import ElfaAPIError, ElfaValidationError
-from elfa.models import AccountMetricV3
+from elfa.models import (
+    AccountMetricV3,
+    CalendarCategoryV3,
+    CalendarConfidenceV3,
+    CalendarStatusV3,
+)
 from elfa.utils.http import AsyncTransport, SyncTransport
 from tests.conftest import BASE_URL
 
@@ -205,6 +210,63 @@ KEY_STATUS = {
         "requestsPerMinute": 120,
     },
     "historyFrom": 1786665600,
+}
+
+
+CALENDAR_ENTRY = {
+    "id": "0c4f9a52-2b8e-4d7c-9f1a-6e3d2b1c0a99",
+    "title": "FOMC rate decision",
+    "summary": None,
+    "category": "macro",
+    "startsAt": 1795111200,
+    "endsAt": None,
+    "precision": "exact",
+    "date": None,
+    "endDate": None,
+    "timezone": "America/New_York",
+    "status": "scheduled",
+    "importance": 95,
+    "confidence": "official",
+    "entities": [],
+    "eventIds": [EVENT["id"]],
+    "storylineIds": [],
+    "outcome": None,
+}
+
+PREDICTION_MARKETS = {
+    "related": [
+        {
+            "id": "634a083e-7b5b-4a35-9f53-28ee58e2fb1b",
+            "kind": "storyline",
+            "markets": [
+                {
+                    "provider": "kalshi",
+                    "marketId": "KXWTI-26NOV0414",
+                    "title": "Oil Price (WTI) on Nov 4, 2026? Nov 4, 2026",
+                    "url": "https://kalshi.com/markets/KXWTI-26NOV0414",
+                    "closesAt": 1793820600,
+                    "eventIds": ["55c71f1e-5fe6-44b0-a482-0277c6dfe7c7"],
+                    "move": None,
+                },
+                {
+                    "provider": "polymarket",
+                    "marketId": "326475",
+                    "title": "Iran agrees to end enrichment of uranium by December 31?",
+                    "url": "https://polymarket.com/event/326475",
+                    "closesAt": None,
+                    "eventIds": ["126848ca-8cb2-4b7f-9664-7b94aa54da13"],
+                    "move": {
+                        "eventId": "126848ca-8cb2-4b7f-9664-7b94aa54da13",
+                        "outcomeId": "1796138",
+                        "outcome": None,
+                        "before": 0.045,
+                        "after": 0.072,
+                        "unusual": True,
+                    },
+                },
+            ],
+        }
+    ]
 }
 
 
@@ -600,6 +662,136 @@ def test_get_key_status_sends_no_params_and_parses():
 
 
 @respx.mock
+def test_get_prediction_markets_comma_joins_ids_and_parses():
+    route = respx.get(f"{BASE_URL}/v3/events/prediction-markets").mock(
+        return_value=httpx.Response(200, json=PREDICTION_MARKETS)
+    )
+    result = _client().get_prediction_markets(["e1", "s1"], limit=5)
+
+    assert _params(route) == {"ids": "e1,s1", "limit": "5"}
+    related = result.related[0]
+    assert related.kind == "storyline"
+    daily, iran = related.markets
+    assert daily.move is None
+    assert daily.closes_at == 1793820600
+    assert iran.market_id == "326475"
+    assert iran.closes_at is None
+    assert iran.move is not None
+    assert iran.move.outcome is None
+    assert iran.move.after == 0.072
+    assert iran.move.unusual is True
+
+
+@pytest.mark.parametrize("ids", [[], ""])
+def test_get_prediction_markets_requires_ids(ids):
+    with pytest.raises(ElfaValidationError):
+        _client().get_prediction_markets(ids)
+
+
+@respx.mock
+def test_get_calendar_sends_no_range_by_default():
+    route = respx.get(f"{BASE_URL}/v3/events/calendar").mock(
+        return_value=httpx.Response(200, json=_page("entries", [CALENDAR_ENTRY]))
+    )
+    result = _client().get_calendar()
+
+    assert _params(route) == {}
+    entry = result.entries[0]
+    assert entry.starts_at == 1795111200
+    assert entry.ends_at is None
+    assert entry.precision == "exact"
+    assert entry.importance == 95
+    assert entry.event_ids == [EVENT["id"]]
+    assert entry.outcome is None
+    assert result.next_cursor == "abc.def"
+    assert result.served_from == 1791801662
+
+
+@respx.mock
+def test_get_calendar_maps_every_param():
+    route = respx.get(f"{BASE_URL}/v3/events/calendar").mock(
+        return_value=httpx.Response(
+            200,
+            json=_page(
+                "entries",
+                [
+                    {
+                        **CALENDAR_ENTRY,
+                        "precision": "day",
+                        "date": "2026-11-20",
+                        "status": "occurred",
+                        "outcome": {"eventId": EVENT["id"], "implication": None},
+                    }
+                ],
+            ),
+        )
+    )
+    result = _client().get_calendar(
+        from_time=1791801662,
+        to_time=1794393662,
+        entity_ids=[BTC, ETH],
+        asset_class="crypto",
+        category=["unlock", "listing"],
+        status=["scheduled", "rescheduled"],
+        confidence=["official"],
+        min_importance=80,
+        order="desc",
+        limit=30,
+        cursor="abc.def",
+    )
+
+    assert _params(route) == {
+        "from": "1791801662",
+        "to": "1794393662",
+        "entityIds": f"{BTC},{ETH}",
+        "assetClass": "crypto",
+        "category": "unlock,listing",
+        "status": "scheduled,rescheduled",
+        "confidence": "official",
+        "minImportance": "80",
+        "order": "desc",
+        "limit": "30",
+        "cursor": "abc.def",
+    }
+    entry = result.entries[0]
+    assert entry.date == "2026-11-20"
+    assert entry.outcome is not None
+    assert entry.outcome.event_id == EVENT["id"]
+    assert entry.outcome.implication is None
+
+
+def test_calendar_enums_match_spec():
+    assert get_args(CalendarCategoryV3) == (
+        "macro",
+        "earnings",
+        "unlock",
+        "governance",
+        "listing",
+        "launch",
+        "airdrop",
+        "conference",
+        "regulatory",
+        "protocolUpgrade",
+        "corporateAction",
+        "marketResolution",
+        "campaign",
+        "expiry",
+        "deadline",
+        "geopolitics",
+        "other",
+    )
+    assert get_args(CalendarStatusV3) == (
+        "scheduled",
+        "rescheduled",
+        "postponed",
+        "cancelled",
+        "past",
+        "occurred",
+    )
+    assert get_args(CalendarConfidenceV3) == ("official", "reported", "rumored")
+
+
+@respx.mock
 def test_v3_400_raises_validation_error_with_request_id():
     respx.get(f"{BASE_URL}/v3/events").mock(
         return_value=httpx.Response(
@@ -715,6 +907,19 @@ async def test_async_get_events_and_positioning():
 
 
 @respx.mock
+async def test_async_get_prediction_markets():
+    route = respx.get(f"{BASE_URL}/v3/events/prediction-markets").mock(
+        return_value=httpx.Response(200, json=PREDICTION_MARKETS)
+    )
+    client = AsyncV3Client(transport=AsyncTransport("k", BASE_URL, retries=0))
+    result = await client.get_prediction_markets(["e1"])
+
+    assert _params(route) == {"ids": "e1"}
+    assert result.related[0].markets[1].move is not None
+    await client._transport.close()
+
+
+@respx.mock
 async def test_async_market_paths_and_key_status():
     book = respx.get(f"{BASE_URL}/v3/market/equity/call-book").mock(
         return_value=httpx.Response(200, json=_page("bars", [BAR]))
@@ -761,6 +966,7 @@ async def test_async_v3_error_propagates():
     [
         ("get_storylines", "/v3/events/storylines", "storylines", {"from_time": 1}),
         ("get_arcs", "/v3/events/arcs", "arcs", {}),
+        ("get_calendar", "/v3/events/calendar", "entries", {}),
         (
             "get_trending_contracts",
             "/v3/market/crypto/trending-contracts",

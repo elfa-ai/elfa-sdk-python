@@ -172,8 +172,17 @@ class AutoExecution(ElfaModel):
     error: Optional[Any] = None
 
 
+class AutoPagination(ElfaModel):
+    limit: Optional[int] = None
+    has_more: Optional[bool] = Field(None, alias="hasMore")
+    next_cursor: Optional[str] = Field(None, alias="nextCursor")
+    total: Optional[int] = None
+    offset: Optional[int] = None
+
+
 class AutoListExecutionsResponse(ElfaModel):
     data: List[AutoExecution] = Field(default_factory=list)
+    pagination: Optional[AutoPagination] = None
 
 
 class AutoValidateSymbolResponse(ElfaModel):

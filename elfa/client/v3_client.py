@@ -15,6 +15,10 @@ from elfa.models.v3 import (
     ArcSortV3,
     ArcsResponseV3,
     ArcStatusV3,
+    CalendarCategoryV3,
+    CalendarConfidenceV3,
+    CalendarResponseV3,
+    CalendarStatusV3,
     CallBookResponseV3,
     CallDirectionV3,
     CallEpisodesResponseV3,
@@ -34,6 +38,7 @@ from elfa.models.v3 import (
     NoveltyV3,
     OrderV3,
     PositioningResponseV3,
+    PredictionMarketsResponseV3,
     StorylineRelationV3,
     StorylinesResponseV3,
     StorylineStatusV3,
@@ -187,6 +192,42 @@ class V3Client:
             q, arc_ids, status, asset_class, entity_ids, sort, order, limit, cursor
         )
         return parse_model(ArcsResponseV3, self._get(path, params))
+
+    def get_prediction_markets(
+        self, ids: List[str], *, limit: Optional[int] = None
+    ) -> PredictionMarketsResponseV3:
+        path, params = build.v3_prediction_markets(ids, limit)
+        return parse_model(PredictionMarketsResponseV3, self._get(path, params))
+
+    def get_calendar(
+        self,
+        *,
+        from_time: Optional[int] = None,
+        to_time: Optional[int] = None,
+        entity_ids: Optional[List[str]] = None,
+        asset_class: Optional[MarketV3] = None,
+        category: Optional[List[CalendarCategoryV3]] = None,
+        status: Optional[List[CalendarStatusV3]] = None,
+        confidence: Optional[List[CalendarConfidenceV3]] = None,
+        min_importance: Optional[float] = None,
+        order: Optional[OrderV3] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> CalendarResponseV3:
+        path, params = build.v3_calendar(
+            from_time,
+            to_time,
+            entity_ids,
+            asset_class,
+            category,
+            status,
+            confidence,
+            min_importance,
+            order,
+            limit,
+            cursor,
+        )
+        return parse_model(CalendarResponseV3, self._get(path, params))
 
     def get_call_book(
         self,
@@ -439,6 +480,42 @@ class AsyncV3Client:
             q, arc_ids, status, asset_class, entity_ids, sort, order, limit, cursor
         )
         return parse_model(ArcsResponseV3, await self._get(path, params))
+
+    async def get_prediction_markets(
+        self, ids: List[str], *, limit: Optional[int] = None
+    ) -> PredictionMarketsResponseV3:
+        path, params = build.v3_prediction_markets(ids, limit)
+        return parse_model(PredictionMarketsResponseV3, await self._get(path, params))
+
+    async def get_calendar(
+        self,
+        *,
+        from_time: Optional[int] = None,
+        to_time: Optional[int] = None,
+        entity_ids: Optional[List[str]] = None,
+        asset_class: Optional[MarketV3] = None,
+        category: Optional[List[CalendarCategoryV3]] = None,
+        status: Optional[List[CalendarStatusV3]] = None,
+        confidence: Optional[List[CalendarConfidenceV3]] = None,
+        min_importance: Optional[float] = None,
+        order: Optional[OrderV3] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> CalendarResponseV3:
+        path, params = build.v3_calendar(
+            from_time,
+            to_time,
+            entity_ids,
+            asset_class,
+            category,
+            status,
+            confidence,
+            min_importance,
+            order,
+            limit,
+            cursor,
+        )
+        return parse_model(CalendarResponseV3, await self._get(path, params))
 
     async def get_call_book(
         self,

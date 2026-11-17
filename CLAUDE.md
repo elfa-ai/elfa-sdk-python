@@ -76,9 +76,9 @@ When exploring the codebase, reference components by their file paths:
 - `elfa/exceptions/__init__.py` - Exception hierarchy
 
 ### API v3
-`client.v3` covers the fourteen `/v3` `GET` endpoints: events, storylines and arcs; call
-books, mindshare and trending contracts; calls, call episodes and positioning; ranked
-accounts; key status.
+`client.v3` covers the sixteen `/v3` `GET` endpoints: events, storylines and arcs;
+prediction markets; the calendar; call books, mindshare and trending contracts; calls,
+call episodes and positioning; ranked accounts; key status.
 ```python
 import time
 
@@ -90,11 +90,13 @@ positioning = client.v3.get_positioning(bitcoin.id)
 Rules to respect in code and tests:
 - Times are unix seconds; milliseconds are a `400`. `from_time` is required except when
   fetching by id or searching with `q`, and `get_events(sort="relevant")` refuses it;
-  entities, arcs, positioning and top accounts take no range.
+  `get_calendar()` defaults to the 30 days from 00:00 UTC today; entities, arcs,
+  prediction markets, positioning and top accounts take no range.
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan: `get_key_status().history_from`.
 - Every plan, Free included, can call every v3 endpoint; each call but
-  `get_key_status()` costs credits on Free, PAYG and Grow.
+  `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free,
+  PAYG and Grow.
 - Unknown parameters are a `400`: never send one the endpoint does not declare. Lists go
   out comma-separated.
 - Chat takes `include_sources` and `use_memory`; sources come back on `data.sources` or the stream's
