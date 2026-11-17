@@ -21,7 +21,7 @@ To say where a change came from, cite the public source ("matches the spec publi
 **Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, the Auto condition engine, and API v3. Covers v2 and v3 (no V1 surface).
 
 ### Technology Stack
-- **Language**: Python 3.9+
+- **Language**: Python 3.11+
 - **HTTP Client**: httpx (sync/async support)
 - **Data Models**: Pydantic v2 for type safety
 - **Testing**: pytest + respx (sync/async mocking)
