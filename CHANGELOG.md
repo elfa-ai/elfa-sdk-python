@@ -9,6 +9,14 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## 7.0.0
+
+### Changed
+
+- **Requires Python 3.11 or later.** Python 3.9 and 3.10 are past end of life and
+  are no longer tested or supported; installs on them resolve to 6.4.0. No API or
+  code changes.
+
 ## 6.4.0
 
 ### Added

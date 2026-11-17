@@ -1,7 +1,7 @@
 # Elfa AI Python SDK
 
 [![PyPI version](https://badge.fury.io/py/elfa-sdk.svg)](https://badge.fury.io/py/elfa-sdk)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Official Python SDK for the Elfa API, v2 and v3 — social intelligence, AI chat, the Auto condition engine, and API v3 events, calls and market data. Sync and async clients, fully typed with Pydantic.
