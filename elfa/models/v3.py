@@ -515,7 +515,7 @@ class MonitorV3(ElfaModel):
     id: str
     query: str
     webhook_url: str = Field(alias="webhookUrl")
-    webhook_secret: str = Field(alias="webhookSecret")
+    webhook_secret: str = Field(alias="webhookSecret", repr=False)
     status: str
     created_at: int = Field(alias="createdAt")
     updated_at: int = Field(alias="updatedAt")
