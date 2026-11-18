@@ -14,6 +14,8 @@ from elfa.models import (
     CalendarCategoryV3,
     CalendarConfidenceV3,
     CalendarStatusV3,
+    MonitorListResponseV3,
+    MonitorV3,
 )
 from elfa.utils.http import AsyncTransport, SyncTransport
 from tests.conftest import BASE_URL
@@ -1204,6 +1206,19 @@ def test_create_monitor_posts_query_and_webhook_url():
     assert result.webhook_secret.startswith("whsec_")
     assert result.status == "active"
     assert result.created_at == 1794981600
+
+
+def test_monitor_repr_leaves_out_webhook_secret():
+    monitor = MonitorV3.model_validate(MONITOR)
+
+    assert MONITOR["webhookSecret"] not in repr(monitor)
+    assert MONITOR["webhookSecret"] not in str(monitor)
+    listing = MonitorListResponseV3.model_validate({"data": [MONITOR], "total": 1})
+    assert MONITOR["webhookSecret"] not in repr(listing)
+    assert monitor.webhook_secret == MONITOR["webhookSecret"]
+    assert (
+        monitor.model_dump(by_alias=True)["webhookSecret"] == MONITOR["webhookSecret"]
+    )
 
 
 @respx.mock

@@ -258,7 +258,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every endpoint in the table follows:
 
-- **Access.** Every plan, Free included, can call every v3 endpoint, and `get_key_status().plan` can be `"free"`. Each call but `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/platform/pricing#api-v3).
+- **Access.** Every plan, Free included, can call every v3 data endpoint, and `get_key_status().plan` can be `"free"`. Each call but `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/platform/pricing#api-v3).
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. `get_calendar()` reads ahead instead, soonest first: `from_time` defaults to 00:00 UTC today and `to_time` to 30 days after `from_time`. Entities, arcs, prediction markets, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
