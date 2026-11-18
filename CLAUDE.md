@@ -76,9 +76,11 @@ When exploring the codebase, reference components by their file paths:
 - `elfa/exceptions/__init__.py` - Exception hierarchy
 
 ### API v3
-`client.v3` covers the sixteen `/v3` `GET` endpoints: events, storylines and arcs;
+`client.v3` covers the sixteen `/v3` `GET` data endpoints: events, storylines and arcs;
 prediction markets; the calendar; call books, mindshare and trending contracts; calls,
-call episodes and positioning; ranked accounts; key status.
+call episodes and positioning; ranked accounts; key status. It also covers Verify
+(`verify`, `POST /v3/verify`) and Monitors (`create_monitor`, `get_monitors`,
+`get_monitor`, `update_monitor`, `delete_monitor`, `get_monitor_matches`).
 ```python
 import time
 
@@ -94,9 +96,10 @@ Rules to respect in code and tests:
   prediction markets, positioning and top accounts take no range.
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan: `get_key_status().history_from`.
-- Every plan, Free included, can call every v3 endpoint; each call but
+- Every plan, Free included, can call every v3 data endpoint; each call but
   `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free,
-  PAYG and Grow.
+  PAYG and Grow. Verify and Monitors need PAYG, Grow or Enterprise: Verify costs 1
+  credit a call, a monitor 2 credits per started hour it is live.
 - Unknown parameters are a `400`: never send one the endpoint does not declare. Lists go
   out comma-separated.
 - Chat takes `include_sources` and `use_memory`; sources come back on `data.sources` or the stream's

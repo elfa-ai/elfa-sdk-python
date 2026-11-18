@@ -1,5 +1,6 @@
 """API v3 client: paths, exact query params, parsing, and errors."""
 
+import json
 from typing import get_args
 
 import httpx
@@ -13,6 +14,8 @@ from elfa.models import (
     CalendarCategoryV3,
     CalendarConfidenceV3,
     CalendarStatusV3,
+    MonitorListResponseV3,
+    MonitorV3,
 )
 from elfa.utils.http import AsyncTransport, SyncTransport
 from tests.conftest import BASE_URL
@@ -989,3 +992,392 @@ async def test_async_list_methods_hit_their_paths(method, path, key, kwargs):
     assert route.called
     assert getattr(result, key) == []
     assert client._transport._client.is_closed is True
+
+
+MONITOR_ID = "5b0c6f8e-2f7a-4f43-9a8e-3c1d2a9b7e10"
+
+VERIFY = {
+    "verdict": "supported",
+    "probabilities": {
+        "supported": 0.91,
+        "contradicted": 0.03,
+        "notEnoughEvidence": 0.06,
+    },
+    "decision": {"type": "yesNo", "yes": 0.9},
+    "evidence": {
+        "twitter": [
+            {
+                "link": "https://x.com/SECGov/status/1986070012345678901",
+                "decisiveness": 0.95,
+                "basis": True,
+            }
+        ],
+        "telegram": [],
+        "web": [],
+    },
+    "asOf": 1794960000,
+    "searchedFrom": 1794355200,
+    "coverage": {
+        "complete": False,
+        "sources": {"twitter": "complete", "telegram": "partial", "web": "complete"},
+        "captions": "unavailable",
+    },
+}
+
+MONITOR = {
+    "id": MONITOR_ID,
+    "query": "OpenAI, Google or Anthropic launches a new AI model",
+    "webhookUrl": "https://example.com/elfa-webhook",
+    "webhookSecret": "whsec_dGVzdA==",
+    "status": "active",
+    "createdAt": 1794981600,
+    "updatedAt": 1794981600,
+}
+
+MATCH = {
+    "id": "msg_2pQ",
+    "monitorId": MONITOR_ID,
+    "matchedAt": 1794985200,
+    "items": [
+        {
+            "source": "event",
+            "id": "107519d5-0ca8-4fb5-a9de-47808bceb407",
+            "alertTitle": "Anthropic releases a new model",
+            "summary": None,
+            "analyzedAt": 1794985100,
+            "citedSources": [
+                {"source": "twitter", "sourceRecordId": None, "link": None}
+            ],
+        },
+        {
+            "source": "web",
+            "id": "w1",
+            "url": "https://www.example.com/news/model",
+            "publishedAt": 1794980000,
+            "publishedDayOnly": True,
+        },
+    ],
+}
+
+
+def _body(route):
+    return json.loads(route.calls[-1].request.content)
+
+
+@respx.mock
+def test_verify_posts_compact_body_and_parses():
+    route = respx.post(f"{BASE_URL}/v3/verify").mock(
+        return_value=httpx.Response(200, json=VERIFY)
+    )
+    result = _client().verify(
+        "The SEC approved a spot Solana ETF.",
+        as_of=1794960000.0,
+        context="Resolves yes on an SEC order.",
+        decision={"type": "yesNo", "yes": "Approved"},
+    )
+
+    request = route.calls[-1].request
+    assert request.headers["content-type"] == "application/json"
+    assert request.content == (
+        b'{"statement":"The SEC approved a spot Solana ETF.","asOf":1794960000,'
+        b'"context":"Resolves yes on an SEC order.",'
+        b'"decision":{"type":"yesNo","yes":"Approved"}}'
+    )
+    assert result.verdict == "supported"
+    assert result.probabilities.not_enough_evidence == 0.06
+    assert result.decision is not None
+    assert result.decision.type == "yesNo"
+    assert result.decision.yes == 0.9
+    assert result.evidence.twitter[0].basis is True
+    assert result.evidence.web == []
+    assert result.as_of == 1794960000
+    assert result.coverage.complete is False
+    assert result.coverage.sources.telegram == "partial"
+
+
+@respx.mock
+def test_verify_sends_only_statement_by_default_and_parses_null_decision():
+    route = respx.post(f"{BASE_URL}/v3/verify").mock(
+        return_value=httpx.Response(200, json={**VERIFY, "decision": None})
+    )
+    result = _client().verify("Binance will list HYPE for spot trading.")
+
+    assert _body(route) == {"statement": "Binance will list HYPE for spot trading."}
+    assert result.decision is None
+
+
+@respx.mock
+def test_verify_parses_choice_and_score_decisions():
+    route = respx.post(f"{BASE_URL}/v3/verify").mock(
+        side_effect=[
+            httpx.Response(
+                200,
+                json={
+                    **VERIFY,
+                    "decision": {
+                        "type": "choice",
+                        "choice": "Yes",
+                        "probabilities": {"Yes": 0.8, "No": 0.2},
+                    },
+                },
+            ),
+            httpx.Response(
+                200,
+                json={
+                    **VERIFY,
+                    "decision": {
+                        "type": "score",
+                        "score": 1.4,
+                        "levelProbabilities": [0.1, 0.4, 0.5],
+                    },
+                },
+            ),
+        ]
+    )
+    client = _client()
+    choice = client.verify(
+        "s",
+        decision={
+            "type": "choice",
+            "options": [
+                {"label": "Yes", "definition": "It happened"},
+                {"label": "No", "definition": "It did not"},
+            ],
+        },
+    )
+    assert _body(route)["decision"]["options"][1]["label"] == "No"
+    score = client.verify("s", decision={"type": "score", "levels": ["a", "b", "c"]})
+
+    assert choice.decision is not None
+    assert choice.decision.choice == "Yes"
+    assert choice.decision.probabilities == {"Yes": 0.8, "No": 0.2}
+    assert score.decision is not None
+    assert score.decision.score == 1.4
+    assert score.decision.level_probabilities == [0.1, 0.4, 0.5]
+
+
+def test_verify_requires_statement():
+    with pytest.raises(ElfaValidationError):
+        _client().verify("")
+
+
+@respx.mock
+def test_verify_is_not_retried():
+    route = respx.post(f"{BASE_URL}/v3/verify").mock(
+        return_value=httpx.Response(
+            503,
+            json={"code": "ERR_SERVICE_UNAVAILABLE", "message": "Unavailable"},
+        )
+    )
+    client = V3Client(transport=SyncTransport("k", BASE_URL, retries=3))
+    with pytest.raises(ElfaAPIError) as exc:
+        client.verify("s")
+    assert exc.value.status_code == 503
+    assert route.call_count == 1
+
+
+@respx.mock
+def test_verify_403_raises_api_error():
+    respx.post(f"{BASE_URL}/v3/verify").mock(
+        return_value=httpx.Response(
+            403, json={"code": "ERR_FORBIDDEN", "message": "Forbidden"}
+        )
+    )
+    with pytest.raises(ElfaAPIError) as exc:
+        _client().verify("s")
+    assert exc.value.status_code == 403
+
+
+@respx.mock
+def test_create_monitor_posts_query_and_webhook_url():
+    route = respx.post(f"{BASE_URL}/v3/monitors").mock(
+        return_value=httpx.Response(201, json=MONITOR)
+    )
+    result = _client().create_monitor(
+        MONITOR["query"], "https://example.com/elfa-webhook"
+    )
+
+    assert _body(route) == {
+        "query": MONITOR["query"],
+        "webhookUrl": "https://example.com/elfa-webhook",
+    }
+    assert result.id == MONITOR_ID
+    assert result.webhook_url == "https://example.com/elfa-webhook"
+    assert result.webhook_secret.startswith("whsec_")
+    assert result.status == "active"
+    assert result.created_at == 1794981600
+
+
+def test_monitor_repr_leaves_out_webhook_secret():
+    monitor = MonitorV3.model_validate(MONITOR)
+
+    assert MONITOR["webhookSecret"] not in repr(monitor)
+    assert MONITOR["webhookSecret"] not in str(monitor)
+    listing = MonitorListResponseV3.model_validate({"data": [MONITOR], "total": 1})
+    assert MONITOR["webhookSecret"] not in repr(listing)
+    assert monitor.webhook_secret == MONITOR["webhookSecret"]
+    assert (
+        monitor.model_dump(by_alias=True)["webhookSecret"] == MONITOR["webhookSecret"]
+    )
+
+
+@respx.mock
+def test_get_monitors_sends_no_params_and_parses():
+    route = respx.get(f"{BASE_URL}/v3/monitors").mock(
+        return_value=httpx.Response(
+            200, json={"data": [MONITOR, {**MONITOR, "status": "ended"}], "total": 2}
+        )
+    )
+    result = _client().get_monitors()
+
+    assert _params(route) == {}
+    assert result.total == 2
+    assert [m.status for m in result.data] == ["active", "ended"]
+
+
+@respx.mock
+def test_get_monitor_hits_its_path():
+    route = respx.get(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(200, json=MONITOR)
+    )
+    result = _client().get_monitor(MONITOR_ID)
+
+    assert route.called
+    assert result.webhook_secret == MONITOR["webhookSecret"]
+
+
+@respx.mock
+def test_update_monitor_patches_only_given_fields():
+    route = respx.patch(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(200, json={**MONITOR, "updatedAt": 1794990000})
+    )
+    client = _client()
+    client.update_monitor(MONITOR_ID, query="Binance announces it will delist a token")
+    assert _body(route) == {"query": "Binance announces it will delist a token"}
+
+    result = client.update_monitor(
+        MONITOR_ID, query="q12", webhook_url="https://example.com/new"
+    )
+    assert _body(route) == {"query": "q12", "webhookUrl": "https://example.com/new"}
+    assert result.updated_at == 1794990000
+
+
+def test_update_monitor_requires_a_field():
+    with pytest.raises(ElfaValidationError):
+        _client().update_monitor(MONITOR_ID)
+
+
+@respx.mock
+def test_delete_monitor_sends_delete_and_parses():
+    route = respx.delete(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(200, json={"id": MONITOR_ID, "deleted": True})
+    )
+    result = _client().delete_monitor(MONITOR_ID)
+
+    assert route.calls[-1].request.content == b""
+    assert result.id == MONITOR_ID
+    assert result.deleted is True
+
+
+@respx.mock
+def test_get_monitor_matches_maps_params_and_parses_both_item_kinds():
+    route = respx.get(f"{BASE_URL}/v3/monitors/{MONITOR_ID}/events").mock(
+        return_value=httpx.Response(200, json={"data": [MATCH], "nextCursor": "c2"})
+    )
+    result = _client().get_monitor_matches(MONITOR_ID, limit=100, cursor="c1")
+
+    assert _params(route) == {"limit": "100", "cursor": "c1"}
+    assert result.next_cursor == "c2"
+    match = result.data[0]
+    assert match.monitor_id == MONITOR_ID
+    assert match.matched_at == 1794985200
+    event, web = match.items
+    assert event.source == "event"
+    assert event.alert_title == "Anthropic releases a new model"
+    assert event.cited_sources is not None
+    assert event.cited_sources[0].source_record_id is None
+    assert event.url is None
+    assert web.source == "web"
+    assert web.url == "https://www.example.com/news/model"
+    assert web.published_day_only is True
+    assert web.cited_sources is None
+
+
+@respx.mock
+def test_get_monitor_matches_last_page():
+    respx.get(f"{BASE_URL}/v3/monitors/{MONITOR_ID}/events").mock(
+        return_value=httpx.Response(200, json={"data": [], "nextCursor": None})
+    )
+    result = _client().get_monitor_matches(MONITOR_ID)
+
+    assert result.data == []
+    assert result.next_cursor is None
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda c: c.get_monitor(""),
+        lambda c: c.update_monitor("", query="abc"),
+        lambda c: c.delete_monitor(""),
+        lambda c: c.get_monitor_matches(""),
+    ],
+)
+def test_monitor_methods_require_id(call):
+    with pytest.raises(ElfaValidationError):
+        call(_client())
+
+
+@respx.mock
+def test_monitor_409_raises_api_error():
+    respx.patch(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(
+            409, json={"code": "ERR_CONFLICT", "message": "Conflict"}
+        )
+    )
+    with pytest.raises(ElfaAPIError) as exc:
+        _client().update_monitor(MONITOR_ID, query="abc")
+    assert exc.value.status_code == 409
+
+
+@respx.mock
+async def test_async_verify_and_monitors():
+    verify = respx.post(f"{BASE_URL}/v3/verify").mock(
+        return_value=httpx.Response(200, json=VERIFY)
+    )
+    create = respx.post(f"{BASE_URL}/v3/monitors").mock(
+        return_value=httpx.Response(201, json=MONITOR)
+    )
+    respx.get(f"{BASE_URL}/v3/monitors").mock(
+        return_value=httpx.Response(200, json={"data": [MONITOR], "total": 1})
+    )
+    respx.get(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(200, json=MONITOR)
+    )
+    update = respx.patch(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(200, json=MONITOR)
+    )
+    respx.delete(f"{BASE_URL}/v3/monitors/{MONITOR_ID}").mock(
+        return_value=httpx.Response(200, json={"id": MONITOR_ID, "deleted": True})
+    )
+    matches = respx.get(f"{BASE_URL}/v3/monitors/{MONITOR_ID}/events").mock(
+        return_value=httpx.Response(200, json={"data": [MATCH], "nextCursor": None})
+    )
+    client = AsyncElfaClient(api_key="k", base_url=BASE_URL, retries=0).v3
+
+    result = await client.verify("s", decision={"type": "yesNo"})
+    assert _body(verify) == {"statement": "s", "decision": {"type": "yesNo"}}
+    assert result.verdict == "supported"
+
+    created = await client.create_monitor("abc", "https://example.com/h")
+    assert _body(create) == {"query": "abc", "webhookUrl": "https://example.com/h"}
+    assert created.id == MONITOR_ID
+    assert (await client.get_monitors()).total == 1
+    assert (await client.get_monitor(MONITOR_ID)).status == "active"
+    await client.update_monitor(MONITOR_ID, webhook_url="https://example.com/n")
+    assert _body(update) == {"webhookUrl": "https://example.com/n"}
+    page = await client.get_monitor_matches(MONITOR_ID, limit=5)
+    assert _params(matches) == {"limit": "5"}
+    assert len(page.data[0].items) == 2
+    assert (await client.delete_monitor(MONITOR_ID)).deleted is True
+    await client._transport.close()
