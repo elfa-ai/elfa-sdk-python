@@ -180,6 +180,7 @@ jobs:
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: ${{ contains(steps.package.outputs.version, '-') }}
+          make_latest: false
 
   notify:
     name: Notify Success
