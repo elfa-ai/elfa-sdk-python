@@ -9,6 +9,35 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## 7.1.0
+
+### Added
+
+- **Verify** (API 3.13.0). `v3.verify(statement, as_of=..., context=..., decision=...)`,
+  sync and async, calls `POST /v3/verify` and returns `VerifyResponseV3`: a `verdict`
+  (`supported`, `contradicted` or `notEnoughEvidence`), its `probabilities`, the
+  `evidence` links it judged per source (`twitter`, `telegram`, `web`) and `coverage`.
+  `decision` asks a `yesNo`, `choice` or `score` question from the same evidence
+  (`VerifyYesNoRequestV3`, `VerifyChoiceRequestV3`, `VerifyScoreRequestV3`); the answer
+  is `decision` on the response. Needs a PAYG, Grow or Enterprise key; 1 credit per call,
+  whatever the verdict.
+- **Monitors** (API 3.13.0). `v3.create_monitor(query, webhook_url)`, `get_monitors()`,
+  `get_monitor(monitor_id)`, `update_monitor(monitor_id, query=..., webhook_url=...)`,
+  `delete_monitor(monitor_id)` and `get_monitor_matches(monitor_id, limit=..., cursor=...)`,
+  sync and async, call `/v3/monitors`. A monitor sends a signed webhook for each new Elfa
+  event or web page that matches its plain-words query; `MonitorV3` carries the
+  `webhook_secret` that verifies them. Matches page back newest first through
+  `MonitorMatchesResponseV3`. Needs a PAYG, Grow or Enterprise key; a live monitor costs
+  2 credits for each started hour, and every other monitor call is free.
+
+### Changed
+
+- `swagger.json` is the spec published on docs.elfa.ai at API 3.13.0. An event's
+  `cited_sources[].source` can be `sec_edgar` (API 3.11.0); `EventCitedSourceV3.source`
+  was already a `str`, so no code change.
+- Documentation links in the README point at the pages' current addresses on
+  docs.elfa.ai.
+
 ## 7.0.0
 
 ### Changed

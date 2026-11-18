@@ -62,16 +62,16 @@ For raw content, call the X (Twitter) API directly with those links/ids.
 - **Sync Client**: `ElfaClient` - data + AI chat (`chat`, `chat_stream`, both take `include_sources` and `use_memory`), with `.auto` and `.v3`
 - **Async Client**: `AsyncElfaClient` - async mirror of `ElfaClient`
 - **Auto engine**: `AutoClient` / `AsyncAutoClient` (`/v2/auto/*`) - EQL queries, drafts, sessions, executions, SSE streams
-- **API v3**: `V3Client` / `AsyncV3Client` (`/v3/*`) - one `GET` method per endpoint, sharing the parent transport
+- **API v3**: `V3Client` / `AsyncV3Client` (`/v3/*`) - one method per endpoint, sharing the parent transport: `GET` for data, plus `verify` and the monitor methods
 - **Transport**: `SyncTransport` / `AsyncTransport` (retries, error mapping, SSE)
-- **Bodies**: Auto mutations send compact JSON via httpx `content=`, never `json=`.
+- **Bodies**: Auto and v3 mutations send compact JSON via httpx `content=`, never `json=`.
 
 ### API v3
 `client.v3` (`V3Client` / `AsyncV3Client`, `/v3/*`) is the data stack that powers agent
 awareness: events, storylines and arcs, the prediction markets they bear on, and a calendar
 of what is scheduled; call books, mindshare and trending contracts;
-calls, call episodes and positioning; ranked accounts. One `GET` method per endpoint,
-param mapping in `_params.py` (`v3_*` builders), models in `elfa/models/v3.py`.
+calls, call episodes and positioning; ranked accounts; plus Verify and Monitors. One method
+per endpoint, param mapping in `_params.py` (`v3_*` builders), models in `elfa/models/v3.py`.
 ```python
 import time
 
@@ -89,11 +89,20 @@ positioning = client.v3.get_positioning(bitcoin.id)
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`
   returns the start, and `served_from` says where an earlier `from_time` was cut.
-- Every plan, Free included, can call every v3 endpoint; each call but
+- Every plan, Free included, can call every v3 data endpoint; each call but
   `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free,
   PAYG and Grow.
 - Unknown parameters are a `400`, never ignored: send only what the endpoint declares.
   Lists go out comma-separated, at most 30 ids.
+- `verify(statement, as_of=, context=, decision=)` (`POST /v3/verify`): PAYG, Grow and
+  Enterprise only, 1 credit per call whatever the verdict, errors free. `decision` is a
+  `yesNo`, `choice` or `score` request; the answer is `VerifyDecisionV3`, typed loosely
+  (`type: str`, the rest optional) so a new decision type still parses.
+- Monitors (`/v3/monitors`): `create_monitor`, `get_monitors`, `get_monitor`,
+  `update_monitor`, `delete_monitor`, `get_monitor_matches` (`/v3/monitors/{id}/events`).
+  PAYG, Grow and Enterprise only; 2 credits per started hour a monitor is live, every
+  other call free; 20 live monitors per key. Writes are never retried. Match items are
+  one model, `MonitorMatchItemV3`, for both `source="event"` and `source="web"`.
 
 ### Error Handling Pattern
 ```python

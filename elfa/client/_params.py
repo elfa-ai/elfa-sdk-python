@@ -5,6 +5,7 @@ share one source of truth for URL/param mapping and client-side validation.
 """
 
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
+from urllib.parse import quote
 
 from elfa.client.base import drop_none
 from elfa.exceptions import ElfaValidationError
@@ -496,4 +497,45 @@ def v3_top_accounts(
 ) -> Query:
     return "/v3/people/accounts", drop_none(
         {"metric": metric, "order": order, "limit": limit, "cursor": cursor}
+    )
+
+
+def v3_verify_body(
+    statement: str,
+    as_of: Optional[float],
+    context: Optional[str],
+    decision: Optional[Mapping[str, Any]],
+) -> Dict[str, Any]:
+    if not statement:
+        raise ElfaValidationError("statement is required")
+    return drop_none(
+        {
+            "statement": statement,
+            "asOf": as_of,
+            "context": context,
+            "decision": decision,
+        }
+    )
+
+
+def v3_monitor_path(monitor_id: str) -> str:
+    if not monitor_id:
+        raise ElfaValidationError("monitor_id is required")
+    return f"/v3/monitors/{quote(monitor_id, safe='')}"
+
+
+def v3_monitor_update_body(
+    query: Optional[str], webhook_url: Optional[str]
+) -> Dict[str, Any]:
+    body = drop_none({"query": query, "webhookUrl": webhook_url})
+    if not body:
+        raise ElfaValidationError("Pass query, webhook_url or both")
+    return body
+
+
+def v3_monitor_matches(
+    monitor_id: str, limit: Optional[int], cursor: Optional[str]
+) -> Query:
+    return f"{v3_monitor_path(monitor_id)}/events", drop_none(
+        {"limit": limit, "cursor": cursor}
     )
