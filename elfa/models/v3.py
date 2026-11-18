@@ -5,10 +5,10 @@ value the API adds later does not fail parsing; the ``Literal`` aliases below
 type the request parameters.
 """
 
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import Field
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from elfa.models.base import ElfaModel
 
@@ -72,6 +72,35 @@ CalendarStatusV3 = Literal[
     "scheduled", "rescheduled", "postponed", "cancelled", "past", "occurred"
 ]
 CalendarConfidenceV3 = Literal["official", "reported", "rumored"]
+
+
+class _VerifyYesNoRequestBaseV3(TypedDict):
+    type: Literal["yesNo"]
+
+
+class VerifyYesNoRequestV3(_VerifyYesNoRequestBaseV3, total=False):
+    yes: str
+    no: str
+
+
+class VerifyChoiceOptionV3(TypedDict):
+    label: str
+    definition: str
+
+
+class VerifyChoiceRequestV3(TypedDict):
+    type: Literal["choice"]
+    options: List[VerifyChoiceOptionV3]
+
+
+class VerifyScoreRequestV3(TypedDict):
+    type: Literal["score"]
+    levels: List[str]
+
+
+VerifyDecisionRequestV3 = Union[
+    VerifyYesNoRequestV3, VerifyChoiceRequestV3, VerifyScoreRequestV3
+]
 
 
 class ExternalIdsV3(ElfaModel):
@@ -431,3 +460,109 @@ class KeyStatusV3(ElfaModel):
     scopes: List[str]
     credits: KeyStatusCreditsV3
     history_from: int = Field(alias="historyFrom")
+
+
+class VerdictProbabilitiesV3(ElfaModel):
+    supported: float
+    contradicted: float
+    not_enough_evidence: float = Field(alias="notEnoughEvidence")
+
+
+class VerifyDecisionV3(ElfaModel):
+    type: str
+    yes: Optional[float] = None
+    choice: Optional[str] = None
+    probabilities: Optional[Dict[str, float]] = None
+    score: Optional[float] = None
+    level_probabilities: Optional[List[float]] = Field(None, alias="levelProbabilities")
+
+
+class VerifyEvidenceItemV3(ElfaModel):
+    link: str
+    decisiveness: float
+    basis: bool
+
+
+class VerifyEvidenceV3(ElfaModel):
+    twitter: List[VerifyEvidenceItemV3]
+    telegram: List[VerifyEvidenceItemV3]
+    web: List[VerifyEvidenceItemV3]
+
+
+class VerifyCoverageSourcesV3(ElfaModel):
+    twitter: str
+    telegram: str
+    web: str
+
+
+class VerifyCoverageV3(ElfaModel):
+    complete: bool
+    sources: VerifyCoverageSourcesV3
+    captions: str
+
+
+class VerifyResponseV3(ElfaModel):
+    verdict: str
+    probabilities: VerdictProbabilitiesV3
+    decision: Optional[VerifyDecisionV3] = None
+    evidence: VerifyEvidenceV3
+    as_of: float = Field(alias="asOf")
+    searched_from: float = Field(alias="searchedFrom")
+    coverage: VerifyCoverageV3
+
+
+class MonitorV3(ElfaModel):
+    id: str
+    query: str
+    webhook_url: str = Field(alias="webhookUrl")
+    webhook_secret: str = Field(alias="webhookSecret")
+    status: str
+    created_at: int = Field(alias="createdAt")
+    updated_at: int = Field(alias="updatedAt")
+
+
+class MonitorListResponseV3(ElfaModel):
+    data: List[MonitorV3]
+    total: int
+
+
+class MonitorDeleteResponseV3(ElfaModel):
+    id: str
+    deleted: bool
+
+
+class MonitorCitedSourceV3(ElfaModel):
+    source: str
+    source_record_id: Optional[str] = Field(None, alias="sourceRecordId")
+    handle: Optional[str] = None
+    link: Optional[str] = None
+
+
+class MonitorMatchItemV3(ElfaModel):
+    source: str
+    id: str
+    alert_title: Optional[str] = Field(None, alias="alertTitle")
+    summary: Optional[str] = None
+    analyzed_at: Optional[int] = Field(None, alias="analyzedAt")
+    first_seen_at: Optional[int] = Field(None, alias="firstSeenAt")
+    cited_sources: Optional[List[MonitorCitedSourceV3]] = Field(
+        None, alias="citedSources"
+    )
+    url: Optional[str] = None
+    title: Optional[str] = None
+    author: Optional[str] = None
+    excerpt: Optional[str] = None
+    published_at: Optional[int] = Field(None, alias="publishedAt")
+    published_day_only: Optional[bool] = Field(None, alias="publishedDayOnly")
+
+
+class MonitorMatchV3(ElfaModel):
+    id: str
+    monitor_id: str = Field(alias="monitorId")
+    matched_at: int = Field(alias="matchedAt")
+    items: List[MonitorMatchItemV3]
+
+
+class MonitorMatchesResponseV3(ElfaModel):
+    data: List[MonitorMatchV3]
+    next_cursor: Optional[str] = Field(None, alias="nextCursor")

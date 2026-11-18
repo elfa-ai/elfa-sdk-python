@@ -1,7 +1,7 @@
 """API v3 clients (`/v3/*`), sync and async.
 
-Every route is a ``GET`` that authenticates with the API key alone. Times are
-unix seconds; list parameters are sent comma-separated.
+Every route authenticates with the API key alone. Times are unix seconds; list
+parameters are sent comma-separated.
 """
 
 from typing import Any, Dict, List, Optional
@@ -35,6 +35,10 @@ from elfa.models.v3 import (
     MarketV3,
     MindsharePeriodV3,
     MindshareResponseV3,
+    MonitorDeleteResponseV3,
+    MonitorListResponseV3,
+    MonitorMatchesResponseV3,
+    MonitorV3,
     NoveltyV3,
     OrderV3,
     PositioningResponseV3,
@@ -44,8 +48,11 @@ from elfa.models.v3 import (
     StorylineStatusV3,
     TopAccountsResponseV3,
     TrendingContractsResponseV3,
+    VerifyDecisionRequestV3,
+    VerifyResponseV3,
 )
 from elfa.utils.http import DEFAULT_BASE_URL, AsyncTransport, SyncTransport
+from elfa.utils.serialize import to_compact_json
 
 
 class V3Client:
@@ -91,6 +98,10 @@ class V3Client:
 
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._transport.request_json("GET", path, params=params)
+
+    def _send(self, method: str, path: str, body: Any = None) -> Any:
+        content = None if body is None else to_compact_json(body)
+        return self._transport.request_json(method, path, content=content)
 
     def get_entities(
         self,
@@ -335,6 +346,53 @@ class V3Client:
     def get_key_status(self) -> KeyStatusV3:
         return parse_model(KeyStatusV3, self._get("/v3/key-status"))
 
+    def verify(
+        self,
+        statement: str,
+        *,
+        as_of: Optional[float] = None,
+        context: Optional[str] = None,
+        decision: Optional[VerifyDecisionRequestV3] = None,
+    ) -> VerifyResponseV3:
+        body = build.v3_verify_body(statement, as_of, context, decision)
+        return parse_model(VerifyResponseV3, self._send("POST", "/v3/verify", body))
+
+    def get_monitors(self) -> MonitorListResponseV3:
+        return parse_model(MonitorListResponseV3, self._get("/v3/monitors"))
+
+    def get_monitor(self, monitor_id: str) -> MonitorV3:
+        path = build.v3_monitor_path(monitor_id)
+        return parse_model(MonitorV3, self._get(path))
+
+    def create_monitor(self, query: str, webhook_url: str) -> MonitorV3:
+        body = {"query": query, "webhookUrl": webhook_url}
+        return parse_model(MonitorV3, self._send("POST", "/v3/monitors", body))
+
+    def update_monitor(
+        self,
+        monitor_id: str,
+        *,
+        query: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+    ) -> MonitorV3:
+        path = build.v3_monitor_path(monitor_id)
+        body = build.v3_monitor_update_body(query, webhook_url)
+        return parse_model(MonitorV3, self._send("PATCH", path, body))
+
+    def delete_monitor(self, monitor_id: str) -> MonitorDeleteResponseV3:
+        path = build.v3_monitor_path(monitor_id)
+        return parse_model(MonitorDeleteResponseV3, self._send("DELETE", path))
+
+    def get_monitor_matches(
+        self,
+        monitor_id: str,
+        *,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> MonitorMatchesResponseV3:
+        path, params = build.v3_monitor_matches(monitor_id, limit, cursor)
+        return parse_model(MonitorMatchesResponseV3, self._get(path, params))
+
 
 class AsyncV3Client:
     """Asynchronous API v3 client. Access via ``AsyncElfaClient.v3``,
@@ -379,6 +437,10 @@ class AsyncV3Client:
 
     async def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return await self._transport.request_json("GET", path, params=params)
+
+    async def _send(self, method: str, path: str, body: Any = None) -> Any:
+        content = None if body is None else to_compact_json(body)
+        return await self._transport.request_json(method, path, content=content)
 
     async def get_entities(
         self,
@@ -622,3 +684,52 @@ class AsyncV3Client:
 
     async def get_key_status(self) -> KeyStatusV3:
         return parse_model(KeyStatusV3, await self._get("/v3/key-status"))
+
+    async def verify(
+        self,
+        statement: str,
+        *,
+        as_of: Optional[float] = None,
+        context: Optional[str] = None,
+        decision: Optional[VerifyDecisionRequestV3] = None,
+    ) -> VerifyResponseV3:
+        body = build.v3_verify_body(statement, as_of, context, decision)
+        return parse_model(
+            VerifyResponseV3, await self._send("POST", "/v3/verify", body)
+        )
+
+    async def get_monitors(self) -> MonitorListResponseV3:
+        return parse_model(MonitorListResponseV3, await self._get("/v3/monitors"))
+
+    async def get_monitor(self, monitor_id: str) -> MonitorV3:
+        path = build.v3_monitor_path(monitor_id)
+        return parse_model(MonitorV3, await self._get(path))
+
+    async def create_monitor(self, query: str, webhook_url: str) -> MonitorV3:
+        body = {"query": query, "webhookUrl": webhook_url}
+        return parse_model(MonitorV3, await self._send("POST", "/v3/monitors", body))
+
+    async def update_monitor(
+        self,
+        monitor_id: str,
+        *,
+        query: Optional[str] = None,
+        webhook_url: Optional[str] = None,
+    ) -> MonitorV3:
+        path = build.v3_monitor_path(monitor_id)
+        body = build.v3_monitor_update_body(query, webhook_url)
+        return parse_model(MonitorV3, await self._send("PATCH", path, body))
+
+    async def delete_monitor(self, monitor_id: str) -> MonitorDeleteResponseV3:
+        path = build.v3_monitor_path(monitor_id)
+        return parse_model(MonitorDeleteResponseV3, await self._send("DELETE", path))
+
+    async def get_monitor_matches(
+        self,
+        monitor_id: str,
+        *,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> MonitorMatchesResponseV3:
+        path, params = build.v3_monitor_matches(monitor_id, limit, cursor)
+        return parse_model(MonitorMatchesResponseV3, await self._get(path, params))
