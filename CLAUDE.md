@@ -97,9 +97,9 @@ Rules to respect in code and tests:
 - Entity filters take an id from `get_entities`, never a ticker or name.
 - History is 30 days, 60 days or 2 years back, by plan: `get_key_status().history_from`.
 - Every plan, Free included, can call every v3 data endpoint; each call but
-  `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free,
-  PAYG and Grow. Verify and Monitors need PAYG, Grow or Enterprise: Verify costs 1
-  credit a call, a monitor 2 credits per started hour it is live.
+  `get_key_status()` costs credits on Free, PAYG and Grow. Verify and Monitors work on
+  every plan too: Verify costs 1 credit a call, a monitor 2 credits per started hour it
+  is live.
 - Unknown parameters are a `400`: never send one the endpoint does not declare. Lists go
   out comma-separated.
 - Chat takes `include_sources` and `use_memory`; sources come back on `data.sources` or the stream's

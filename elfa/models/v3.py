@@ -28,6 +28,35 @@ EventTypeV3 = Literal[
     "social",
     "other",
 ]
+EventCategoryV3 = Literal[
+    "earnings",
+    "analystRating",
+    "corporateAction",
+    "acquisition",
+    "financing",
+    "partnership",
+    "product",
+    "personnel",
+    "plansAndMilestones",
+    "ipo",
+    "exchangeListing",
+    "delisting",
+    "tokenLaunch",
+    "tokenomics",
+    "governance",
+    "flows",
+    "marketMove",
+    "metricsAndReports",
+    "economy",
+    "policy",
+    "legal",
+    "securityIncident",
+    "outage",
+    "geopolitics",
+    "disaster",
+    "commentary",
+    "forecast",
+]
 ImplicationV3 = Literal["bullish", "bearish", "mixed", "unclear"]
 NoveltyV3 = Literal["new", "update"]
 AlertActionV3 = Literal["alert", "monitor"]
@@ -162,6 +191,7 @@ class EventV3(ElfaModel):
     summary: Optional[str] = None
     implication: Optional[str] = None
     event_type: Optional[str] = Field(None, alias="eventType")
+    event_category: Optional[str] = Field(None, alias="eventCategory")
     primary_entities: List[EventEntityV3] = Field(alias="primaryEntities")
     related_entities: List[EventEntityV3] = Field(alias="relatedEntities")
     alert_action: Optional[str] = Field(None, alias="alertAction")
