@@ -9,6 +9,26 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
+## Unreleased
+
+### Added
+
+- **`event_category` on `v3.get_events()`** (API 3.14.0), sync and async: what
+  happened, such as `earnings`, `analystRating`, `exchangeListing`, `securityIncident`
+  or `forecast`, as a list of the 27 `EventCategoryV3` values, sent comma-separated.
+  It combines with `event_type`, which stays the domain, works with `sort="relevant"`,
+  and the API refuses it with `q` and `event_ids`. An empty list raises
+  `ElfaValidationError`. `EventV3.event_category` is a `str`, or `None` on about 1 event
+  in 10 and on events analysed before 2026-09-30; new values may be added in a minor API
+  version, so treat one you do not know as no category. New type `EventCategoryV3`.
+
+### Changed
+
+- README, `AGENT.md` and `CLAUDE.md`: Verify and Monitors work on every plan, Free
+  included (API 3.15.0, 3.16.0), and `get_prediction_markets()` costs 1 credit a call
+  (API 3.15.0); they no longer say otherwise.
+- `swagger.json` is the spec published on docs.elfa.ai at API 3.16.0.
+
 ## 7.1.0
 
 ### Added

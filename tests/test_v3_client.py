@@ -41,6 +41,7 @@ EVENT = {
     "summary": "Eligible purchases earn 3% back in Bitcoin.",
     "implication": "bullish",
     "eventType": "company",
+    "eventCategory": "product",
     "primaryEntities": [
         {"id": BTC, "symbol": "BTC", "name": "Bitcoin", "entityType": "token"}
     ],
@@ -313,6 +314,8 @@ def test_empty_list_raises_instead_of_dropping_the_filter():
     )
     with pytest.raises(ElfaValidationError, match="entity_ids is empty"):
         _client().get_events(from_time=1, entity_ids=[])
+    with pytest.raises(ElfaValidationError, match="event_category is empty"):
+        _client().get_events(from_time=1, event_category=[])
 
     assert not route.called
 
@@ -334,6 +337,7 @@ def test_get_events_maps_every_param():
         event_ids=["e1", "e2"],
         event_class="market",
         event_type="regulatory",
+        event_category=["policy", "legal"],
         implication="bearish",
         entity_ids=[BTC, ETH],
         asset_class="crypto",
@@ -355,6 +359,7 @@ def test_get_events_maps_every_param():
         "eventIds": "e1,e2",
         "eventClass": "market",
         "eventType": "regulatory",
+        "eventCategory": "policy,legal",
         "implication": "bearish",
         "entityIds": f"{BTC},{ETH}",
         "assetClass": "crypto",
@@ -370,6 +375,7 @@ def test_get_events_maps_every_param():
     }
     event = result.events[0]
     assert event.alert_title.startswith("Block")
+    assert event.event_category == "product"
     assert event.primary_entities[0].symbol == "BTC"
     assert event.impacts[0].price_change_1d == 0.0157
     assert event.impacts[0].market_wide is None
@@ -896,7 +902,10 @@ async def test_async_get_events_and_positioning():
     async with AsyncElfaClient(api_key="k", base_url=BASE_URL, retries=0) as client:
         assert client.v3._transport is client._transport
         result = await client.v3.get_events(
-            entity_ids=[BTC, ETH], from_time=1791801662, alert_action=["alert"]
+            entity_ids=[BTC, ETH],
+            from_time=1791801662,
+            alert_action=["alert"],
+            event_category=["earnings"],
         )
         positioning = await client.v3.get_positioning(BTC)
 
@@ -904,6 +913,7 @@ async def test_async_get_events_and_positioning():
         "entityIds": f"{BTC},{ETH}",
         "from": "1791801662",
         "alertAction": "alert",
+        "eventCategory": "earnings",
     }
     assert result.events[0].id == EVENT["id"]
     assert positioning.open_short == 2

@@ -90,17 +90,16 @@ positioning = client.v3.get_positioning(bitcoin.id)
 - History is 30 days, 60 days or 2 years back, by plan; `get_key_status().history_from`
   returns the start, and `served_from` says where an earlier `from_time` was cut.
 - Every plan, Free included, can call every v3 data endpoint; each call but
-  `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free,
-  PAYG and Grow.
+  `get_key_status()` costs credits on Free, PAYG and Grow.
 - Unknown parameters are a `400`, never ignored: send only what the endpoint declares.
   Lists go out comma-separated, at most 30 ids.
-- `verify(statement, as_of=, context=, decision=)` (`POST /v3/verify`): PAYG, Grow and
-  Enterprise only, 1 credit per call whatever the verdict, errors free. `decision` is a
+- `verify(statement, as_of=, context=, decision=)` (`POST /v3/verify`): every plan, Free
+  included, 1 credit per call whatever the verdict, errors free. `decision` is a
   `yesNo`, `choice` or `score` request; the answer is `VerifyDecisionV3`, typed loosely
   (`type: str`, the rest optional) so a new decision type still parses.
 - Monitors (`/v3/monitors`): `create_monitor`, `get_monitors`, `get_monitor`,
   `update_monitor`, `delete_monitor`, `get_monitor_matches` (`/v3/monitors/{id}/events`).
-  PAYG, Grow and Enterprise only; 2 credits per started hour a monitor is live, every
+  Every plan, Free included; 2 credits per started hour a monitor is live, every
   other call free; 20 live monitors per key. Writes are never retried. Match items are
   one model, `MonitorMatchItemV3`, for both `source="event"` and `source="web"`.
 

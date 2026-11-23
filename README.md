@@ -258,7 +258,7 @@ print(positioning.open_long, positioning.open_short)
 
 Rules every endpoint in the table follows:
 
-- **Access.** Every plan, Free included, can call every v3 data endpoint, and `get_key_status().plan` can be `"free"`. Each call but `get_key_status()` and, for now, `get_prediction_markets()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/platform/pricing#api-v3).
+- **Access.** Every plan, Free included, can call every v3 data endpoint, and `get_key_status().plan` can be `"free"`. Each call but `get_key_status()` costs credits on Free, PAYG and Grow, priced per endpoint on the [pricing page](https://docs.elfa.ai/platform/pricing#api-v3).
 - **Times** are unix seconds, UTC, in requests and responses. Milliseconds are a `400`: divide by 1000.
 - **`from_time` is required**, except when fetching by id (`event_ids`, `storyline_ids`, `arc_ids`, `call_ids`, `episode_ids`, up to 30) or searching with `q`. `get_events(sort="relevant")` ranks the last 24 hours and refuses `from_time`. `to_time` defaults to now. `get_calendar()` reads ahead instead, soonest first: `from_time` defaults to 00:00 UTC today and `to_time` to 30 days after `from_time`. Entities, arcs, prediction markets, positioning and top accounts take no range; mindshare takes a `period` and an optional `to_time`.
 - **Entity filters take an id, never a name.** `get_entities` turns a ticker, name, handle, address, CoinGecko id, FIGI or CIK into that id. It matches exactly; it is not a search.
@@ -285,7 +285,7 @@ if result.decision is not None:
     print(result.decision.yes)
 ```
 
-- **Plans and cost.** PAYG, Grow and Enterprise; a Free key gets a `403`. A call costs 1 credit, whatever the verdict. Errors cost nothing.
+- **Plans and cost.** Every plan, Free included. A call costs 1 credit, whatever the verdict. Errors cost nothing.
 - **Inputs.** `statement` is up to 500 characters. `context` is up to 4,000 characters of background, such as how a market resolves, and is never treated as evidence. `as_of` (unix seconds) judges the statement as of that moment, at most 30 days ago.
 - **Decision.** `decision` asks a question from the same evidence: `{"type": "yesNo"}`, `{"type": "choice", "options": [{"label": ..., "definition": ...}, ...]}` (2 to 20 options) or `{"type": "score", "levels": [...]}` (2 to 10 levels, lowest first). The answer is `result.decision`, with `yes`, `choice` and `probabilities`, or `score` and `level_probabilities`; it is `None` when none was asked or nothing was found.
 - **Reading it.** `notEnoughEvidence` does not mean false. `coverage.complete=False` means a source did not answer in time, so the verdict may have missed something. No item holds the text of a post or page: open its `link`.
@@ -320,7 +320,7 @@ client.v3.delete_monitor(monitor.id)
 | `delete_monitor(monitor_id)` | `DELETE /v3/monitors/{id}` |
 | `get_monitor_matches(monitor_id, limit=..., cursor=...)` | `GET /v3/monitors/{id}/events` |
 
-- **Plans and cost.** PAYG, Grow and Enterprise. A live monitor costs 2 credits for each started hour, the first when you create it. Every other monitor call is free, and a failed create is never charged.
+- **Plans and cost.** Every plan, Free included. A live monitor costs 2 credits for each started hour, the first when you create it. Every other monitor call is free, and a failed create is never charged.
 - **Limits.** Up to 20 live monitors per key. `query` is 3 to 500 characters. `webhook_url` is HTTPS on a public host, up to 2,048 characters.
 - **Webhooks.** `webhook_secret` (`whsec_...`) verifies the signature on each webhook from the monitor. It never changes, and `get_monitor` returns it again, so keep it out of logs. Skip a `webhook-id` you already handled.
 - **Status.** `status` is `"active"`, or `"ended"` when Elfa stopped the monitor, for example when the key could not pay for an hour. An ended monitor cannot be changed: create a new one.
