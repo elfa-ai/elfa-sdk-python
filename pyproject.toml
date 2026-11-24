@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "elfa-sdk"
-version = "7.1.0"
+version = "7.2.0"
 description = "Official Python SDK for Elfa. Get events, answers, verdicts and alerts from social and web data."
 readme = "README.md"
 requires-python = ">=3.11"
