@@ -9,7 +9,7 @@ Versions track the [JavaScript SDK](https://github.com/elfa-ai/elfa-sdk-js) wher
 the two cover the same API surface, so a breaking change to the API bumps both.
 They are not lockstep: an SDK-only fix ships in one without the other.
 
-## Unreleased
+## 7.2.0
 
 ### Added
 
@@ -27,7 +27,13 @@ They are not lockstep: an SDK-only fix ships in one without the other.
 - README, `AGENT.md` and `CLAUDE.md`: Verify and Monitors work on every plan, Free
   included (API 3.15.0, 3.16.0), and `get_prediction_markets()` costs 1 credit a call
   (API 3.15.0); they no longer say otherwise.
-- `swagger.json` is the spec published on docs.elfa.ai at API 3.16.0.
+- `swagger.json` is the spec published on docs.elfa.ai at API 3.16.1.
+- The README, the PyPI description and the package docstring use the docs.elfa.ai line:
+  "Get events, answers, verdicts and alerts from social and web data." The README and
+  `AGENT.md` name the docs products: Data, Explain, Verify, Monitors and Auto, plus the
+  older Social data (v2) endpoints, and the Auto docstrings drop "condition engine". The
+  quick start now makes the docs' first request,
+  `v3.get_events(from_time=since, alert_action=["alert"])`.
 
 ## 7.1.0
 
