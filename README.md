@@ -29,7 +29,7 @@ pip install elfa-sdk
 
 ## Quick start
 
-Read the events Elfa judged most important in the last 24 hours. `from_time` is in unix seconds.
+Read the events Elfa judged most important in the last 24 hours, newest first. `from_time` is in unix seconds.
 
 ### Synchronous
 
