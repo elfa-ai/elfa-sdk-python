@@ -1,4 +1,4 @@
-"""Auto condition engine.
+"""Auto alerts.
 
 Every Auto route authenticates with the API key alone.
 """

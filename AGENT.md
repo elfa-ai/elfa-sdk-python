@@ -18,7 +18,7 @@ To say where a change came from, cite the public source ("matches the spec publi
 
 ## Project Overview
 
-**Elfa Python SDK** - Official Python SDK for the Elfa API: social intelligence, AI chat, the Auto condition engine, and API v3. Covers v2 and v3 (no V1 surface).
+**Elfa Python SDK** - Official Python SDK for the Elfa API: Data, Explain (AI chat), Verify, Monitors and Auto, plus the older Social data (v2) endpoints. Covers v2 and v3 (no V1 surface).
 
 ### Technology Stack
 - **Language**: Python 3.11+
@@ -67,8 +67,8 @@ For raw content, call the X (Twitter) API directly with those links/ids.
 - **Bodies**: Auto and v3 mutations send compact JSON via httpx `content=`, never `json=`.
 
 ### API v3
-`client.v3` (`V3Client` / `AsyncV3Client`, `/v3/*`) is the data stack that powers agent
-awareness: events, storylines and arcs, the prediction markets they bear on, and a calendar
+`client.v3` (`V3Client` / `AsyncV3Client`, `/v3/*`) covers Data: events,
+storylines and arcs, the prediction markets they bear on, and a calendar
 of what is scheduled; call books, mindshare and trending contracts;
 calls, call episodes and positioning; ranked accounts; plus Verify and Monitors. One method
 per endpoint, param mapping in `_params.py` (`v3_*` builders), models in `elfa/models/v3.py`.

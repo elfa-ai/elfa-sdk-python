@@ -1,8 +1,8 @@
 """
 Elfa AI Python SDK
 
-Official Python SDK for the Elfa API — social intelligence, AI chat, and the
-Auto condition engine for crypto.
+Official Python SDK for Elfa. Get events, answers, verdicts and alerts from
+social and web data.
 """
 
 from elfa.client.async_client import AsyncElfaClient

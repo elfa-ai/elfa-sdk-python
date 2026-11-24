@@ -1,4 +1,4 @@
-"""Auto condition engine clients (`/v2/auto/*`), sync and async.
+"""Auto clients (`/v2/auto/*`), sync and async.
 
 Every route authenticates with the API key alone. Notification streams are
 exposed as generators over SSE.

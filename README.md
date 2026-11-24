@@ -4,15 +4,17 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Official Python SDK for the Elfa API, v2 and v3 — social intelligence, AI chat, the Auto condition engine, and API v3 events, calls and market data. Sync and async clients, fully typed with Pydantic.
+Official Python SDK for [Elfa](https://docs.elfa.ai). Get events, answers, verdicts and alerts from social and web data. Sync and async clients, fully typed with Pydantic.
+
+Elfa indexes social media and web pages, and turns them into high-intent events and entities. Your agent can query them, ask about them, or get an alert when they happen.
 
 ## Features
 
-- **Social intelligence** — trending tokens, mentions, narratives, event summaries
-- **AI chat** — market analysis and conversational chat via `client.chat`, streamed via `client.chat_stream`
-- **Auto condition engine** — build EQL queries that watch markets and notify via `client.auto`
-- **API v3** — events, storylines and arcs, the prediction markets they bear on, and a calendar of what is scheduled; call books, mindshare and trending contracts; calls, call episodes and positioning; ranked accounts, via `client.v3`
+- **Data** — events, storylines and arcs, the prediction markets they bear on, and a calendar of what is scheduled; call books, mindshare and trending contracts; calls, call episodes and positioning; ranked accounts, via `client.v3`
+- **Explain** — written, sourced answers to market questions via `client.chat`, streamed via `client.chat_stream`
 - **Verify and Monitors** — check a claim against X posts, public Telegram channels and web pages with `client.v3.verify`, and get a signed webhook for each new match of a plain-words query with `client.v3.create_monitor`
+- **Auto** — alert rules, written as EQL queries, that watch markets and notify via `client.auto`
+- **Social data (v2)** — trending tokens, mentions, narratives and event summaries from the older endpoints, which Elfa will deprecate
 - **Sync and async** — `ElfaClient` and `AsyncElfaClient`, same surface
 - **Typed** — Pydantic v2 models, full type hints
 - **Robust** — retries with backoff, typed errors
@@ -27,35 +29,36 @@ pip install elfa-sdk
 
 ## Quick start
 
+Read the events Elfa judged most important in the last 24 hours. `from_time` is in unix seconds.
+
 ### Synchronous
 
 ```python
+import time
+
 from elfa import ElfaClient
 
 client = ElfaClient(api_key="your-api-key")
 
-trending = client.get_trending_tokens(time_window="24h")
-for token in trending.data.data:
-    print(token.token, token.current_count, f"{token.change_percent:+.1f}%")
-
-mentions = client.get_keyword_mentions(keywords="bitcoin,ethereum", time_window="1h")
-for mention in mentions.data:
-    print(mention.link, mention.like_count)
-
-answer = client.chat("What's the sentiment on Bitcoin today?")
-print(answer.data.message)
+since = int(time.time()) - 86400
+events = client.v3.get_events(from_time=since, alert_action=["alert"])
+for event in events.events:
+    print(event.alert_title)
 ```
 
 ### Asynchronous
 
 ```python
 import asyncio
+import time
+
 from elfa import AsyncElfaClient
 
 async def main():
     async with AsyncElfaClient(api_key="your-api-key") as client:
-        trending = await client.get_trending_tokens(time_window="24h")
-        print(trending.data.data[0].token)
+        since = int(time.time()) - 86400
+        events = await client.v3.get_events(from_time=since, alert_action=["alert"])
+        print(len(events.events))
 
 asyncio.run(main())
 ```
@@ -77,7 +80,7 @@ client = ElfaClient(
 assert client.test_connection() is True
 ```
 
-The Auto engine is also constructable standalone if that is all you need:
+The Auto client is also constructable standalone if that is all you need:
 
 ```python
 from elfa import AutoClient
@@ -95,7 +98,9 @@ from elfa import ElfaClient
 client = ElfaClient(api_key=os.environ["ELFA_API_KEY"])
 ```
 
-## Core data & chat
+## Social data (v2) and Explain
+
+Apart from `ping`, `get_api_key_status`, `chat` and `chat_stream` (Explain), these methods call the older Social data (v2) endpoints. Elfa will deprecate them; they still work, but build new work on [Data](#data-verify-and-monitors-clientv3).
 
 All methods exist on both `ElfaClient` (sync) and `AsyncElfaClient` (async).
 
@@ -153,9 +158,9 @@ Pass `use_memory=True` to let the request use the saved memory of the Elfa accou
 
 Each source has a `url`, a `kind` and an optional `title` naming the research step, such as "Searched X". These are links only: the content of a page or post is not returned. A source was read, not necessarily cited in `message`, and the list is empty when the answer used no linkable source. `kind` is a string (`x_post`, `x_account`, `telegram`, `dex`, `explorer`, `prediction_market`, `web`): treat a value you do not recognise as `web`.
 
-## Auto condition engine (`client.auto`)
+## Auto (`client.auto`)
 
-Build [EQL](https://docs.elfa.ai) queries that watch conditions and fire actions (`notify`, `webhook`, `telegram_bot`, `llm`). Every route authenticates with the API key alone.
+[Auto](https://docs.elfa.ai/auto/overview) runs an alert rule that you write and tells you when it matches. Build EQL queries that watch conditions and fire actions (`notify`, `webhook`, `telegram_bot`, `llm`). Every route authenticates with the API key alone.
 
 ```python
 query = {
@@ -218,9 +223,9 @@ async for event in async_client.auto.stream_all():
     print(event.event, event.data)
 ```
 
-## API v3 (`client.v3`)
+## Data, Verify and Monitors (`client.v3`)
 
-API v3 is the data stack that powers agent awareness: events, storylines and arcs, the prediction markets they bear on, and a calendar of what is scheduled; call books, mindshare and trending contracts; calls, call episodes and positioning; ranked accounts. Every method exists on `client.v3` (sync) and `async_client.v3` (async), and shares the client's API key, retries and headers.
+`client.v3` covers [Data](https://docs.elfa.ai/enrich/overview): events, storylines and arcs, the prediction markets they bear on, and a calendar of what is scheduled; call books, mindshare and trending contracts; calls, call episodes and positioning; ranked accounts. Every method exists on `client.v3` (sync) and `async_client.v3` (async), and shares the client's API key, retries and headers.
 
 Resolve Bitcoin, read its last day of events, then see how accounts are positioned on it:
 
@@ -269,7 +274,7 @@ Rules every endpoint in the table follows:
 - **Unknown parameters are a `400`**, never ignored. The SDK sends only the parameters you set.
 - No endpoint returns post text.
 
-`V3Client` and `AsyncV3Client` are also constructable standalone, like `AutoClient`. See the [API v3 docs](https://docs.elfa.ai/enrich/overview) for every parameter and field.
+`V3Client` and `AsyncV3Client` are also constructable standalone, like `AutoClient`. See the [Data docs](https://docs.elfa.ai/enrich/overview) for every parameter and field.
 
 ### Verify
 
