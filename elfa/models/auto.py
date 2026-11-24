@@ -1,4 +1,4 @@
-"""Models for the Auto condition engine (`/v2/auto/*`).
+"""Models for Auto (`/v2/auto/*`).
 
 Many Auto responses are intentionally loose server-side; the models below capture
 the documented fields and keep any extras (``extra="allow"`` on the base).

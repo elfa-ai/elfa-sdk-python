@@ -1,4 +1,4 @@
-"""API v3. Run with ELFA_API_KEY set."""
+"""Data endpoints (`client.v3`). Run with ELFA_API_KEY set."""
 
 import os
 import time
